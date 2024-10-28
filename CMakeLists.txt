@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5.0)
-project(ProjectBase VERSION 0.1.0 LANGUAGES C CXX)
+project(HighBloodPressure VERSION 0.1.0 LANGUAGES C CXX)
 
 add_definitions(-DUNICODE)
 add_definitions(-D_UNICODE)

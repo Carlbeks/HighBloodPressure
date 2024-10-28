@@ -9,7 +9,7 @@
 static HINSTANCE MainInstance;
 static HWND MainWindowHandle;
 
-static inline String ApplicationName = L"Project";
+static inline String ApplicationName = L"High Blood Pressure";
 
 inline Carlbeks::UI::Main MainWindow;
 inline Carlbeks::UI::TickThread MainTick{ &MainWindow };
