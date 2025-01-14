@@ -1,3 +1,13 @@
 /build
 /out
 /CMakePresets.json
+/cmake-build-debug-mingw/
+/cmake-build-release-mingw/
+/cmake-build-release-visual-studio/
+/.idea/codeStyles/codeStyleConfig.xml
+/.idea/editor.xml
+/.idea/HighBloodPressure.iml
+/.idea/misc.xml
+/.idea/modules.xml
+/.idea/codeStyles/Project.xml
+/.idea/vcs.xml

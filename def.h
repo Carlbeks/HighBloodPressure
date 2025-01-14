@@ -8,6 +8,8 @@
 #include <string>
 #include <map>
 
+using wchar = wchar_t;
+using QWORD = unsigned long long int;
 using String = std::wstring;
 template<typename K, typename V, typename Cmp = std::less<K>, typename Alloc = std::allocator<std::pair<const K, V>>> using Map = std::map<K, V, Cmp, Alloc>;
 
@@ -28,3 +30,16 @@ template<typename K, typename V, typename Cmp = std::less<K>, typename Alloc = s
 
 #define NOMINMAX
 #include <Windows.h>
+#include <Windowsx.h>
+#include <minwindef.h>
+#include <windef.h>
+#include <wingdi.h>
+#include <WinUser.h>
+#include <Uxtheme.h>
+#include <iostream>
+#include <dwmapi.h>
+
+#pragma comment(lib, "ws2_32.lib")
+#pragma comment(lib, "dwmapi.lib")
+#pragma comment(lib, "Uxtheme.lib")
+#pragma comment(lib, "winmm.lib")

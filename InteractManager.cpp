@@ -263,3 +263,5 @@ InteractManager::InteractManager() {
 	keyStatus[0xFE].name = L"OEM-Clear";
 }
 
+KeyStatus& InteractManager::getKey(const KeyBinding& binding) noexcept { return keyStatus[binding.keyCode]; }
+
