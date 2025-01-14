@@ -15,7 +15,10 @@ set(CMAKE_WIN32_EXECUTABLE true)
 include(CTest)
 enable_testing()
 
-add_executable(${PROJECT_NAME} main.cpp)
+add_executable(${PROJECT_NAME} main.cpp
+        def.h
+        InteractManager.cpp
+        InteractManager.h)
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)

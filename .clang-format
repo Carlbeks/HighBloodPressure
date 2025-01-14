@@ -7,7 +7,7 @@ BasedOnStyle: llvm
 #   WIN = Whatever. If Needed, you can change it as you like.
 #   WSO = Whatever. If needed, you can change, but keep same in One code block.
 #   BTW = Better This but you can change as you like, Whatever.
-# 
+#
 # 在标识后紧跟默认值，再后跟所有可能取值
 
 Language: Cpp
@@ -78,7 +78,7 @@ BraceWrapping:
   BeforeElse: true
   BeforeLambdaBody: false # BTW false, true
   BeforeWhile: true
-  # BTW false, true 
+  # BTW false, true
   IndentBraces: false # 仅当花括号换行时有效
   SplitEmptyFunction: false # 如果为true，空函数右花括号}强制换行
   SplitEmptyRecord: false # 如果为true，空类型class union union...右花括号}强制换行
@@ -149,7 +149,7 @@ IncludeBlocks: Preserve
 
 IndentCaseLabels: true
 IndentExternBlock: Indent
-IndentWidth: 4
+IndentWidth: 2
 InsertNewlineAtEOF: true
 KeepEmptyLinesAtEOF: true
 LineEnding: CRLF
@@ -169,7 +169,7 @@ SpaceAfterTemplateKeyword: false # WSO
 SpaceAroundPointerQualifiers: Before # WSO
 SpacesBeforeTrailingComments: 0 # Better 1; 0 ok, 2+ better not.
 Standard: Latest
-TabWidth: 4 # 4 or 2, WSO
+TabWidth: 2 # 4 or 2, WSO
 # UseTab possible values:
 #   Never
 #   ForIndentation

@@ -1,67 +1,45 @@
 
 #include <Windows.h>
-#include <consoleapi.h>
-#include <corecrt_wprocess.h>
 #include <minwindef.h>
 #include <windef.h>
 #include <wingdi.h>
 #include <winuser.h>
 #include <Uxtheme.h>
-#include <vssym32.h>
+#include <iostream>
+#include <dwmapi.h>
 
-#include "../CarlbeksLib/iwindows.h"
-
-#include "core.h"
+#include "hbp.h"
+#include "InteractManager.h"
 
 LRESULT __stdcall WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	switch (uMsg) {
-		[[likely]] case WM_PAINT: {
+			_LIKELY
+		case WM_PAINT: {
 			PAINTSTRUCT ps;
-			HDC hdc = BeginPaint(hwnd, &ps); // Paint caption
-			MainWindow.fireRender();
+			HDC hdc = BeginPaint(hwnd, &ps);// Paint caption
 			EndPaint(hwnd, &ps);
 			break;
 		}
-		case WM_LBUTTONDOWN:
-			MainWindow.fireMouseDown(Carlbeks::UI::MA_LEFT);
-			MainWindow.fireRender();
+		case WM_LBUTTONDOWN: interactManager.update(VK_LBUTTON, true);
 			break;
-		case WM_RBUTTONDOWN:
-			MainWindow.fireMouseDown(Carlbeks::UI::MA_RIGHT);
-			MainWindow.fireRender();
+		case WM_RBUTTONDOWN: interactManager.update(VK_RBUTTON, true);
 			break;
-		case WM_LBUTTONUP:
-			MainWindow.fireMouseUp(Carlbeks::UI::MA_LEFT);
-			MainWindow.fireRender();
+		case WM_LBUTTONUP: interactManager.update(VK_LBUTTON, false);
 			break;
-		case WM_RBUTTONUP:
-			MainWindow.fireMouseUp(Carlbeks::UI::MA_RIGHT);
-			MainWindow.fireRender();
+		case WM_RBUTTONUP: interactManager.update(VK_RBUTTON, false);
 			break;
-		[[likely]] case WM_NCHITTEST: {
-			Carlbeks::UI::UIReturn ret = MainWindow.fireMouseMove();
-			MainWindow.fireRender();
-			if (ret & 0x20) return ret ^ 0x20;
-			return HTCLIENT;
+			_LIKELY
+		case WM_NCHITTEST: {
 			LRESULT lr = 0;
 			BOOL r = DwmDefWindowProc(hwnd, uMsg, wParam, lParam, &lr);
 			return lr;
 		}
-		[[likely]] case WM_MOUSEMOVE: {
-			MainWindow.fireMouseMove();
-			// MainWindow.fireRender();
+		case WM_MOUSEMOVE: { break; }
+		case WM_MBUTTONDOWN: interactManager.update(VK_MBUTTON, true);
 			break;
-		}
-		[[unlikely]] case WM_MBUTTONDOWN:
-			MainWindow.fireMouseDown(Carlbeks::UI::MA_MID);
-			MainWindow.fireRender();
+		case WM_MBUTTONUP: interactManager.update(VK_MBUTTON, false);
 			break;
-		[[unlikely]] case WM_MBUTTONUP:
-			MainWindow.fireMouseUp(Carlbeks::UI::MA_MID);
-			MainWindow.fireRender();
-			break;
-		[[unlikely]] case WM_COMMAND:
-			std::wcout << L"WM_COMMAND" << std::endl;
+		case WM_COMMAND: std::wcout << L"WM_COMMAND" << std::endl;
 			break;
 		case WM_DWMCOMPOSITIONCHANGED: {
 			MARGINS margins{
@@ -70,11 +48,10 @@ LRESULT __stdcall WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 				.cyTopHeight = 0,
 				.cyBottomHeight = 0
 			};
-			HRESULT hr = Carlbeks::WindowsInterface::RemoveDefaultCaption(hwnd, &margins);
+			HRESULT hr = RemoveDefaultCaption(hwnd, &margins);
 			break;
 		}
-		case WM_NCCALCSIZE:
-			if (wParam == 1) {
+		case WM_NCCALCSIZE: if (wParam == 1) {
 				NCCALCSIZE_PARAMS* pncsp = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
 				pncsp->rgrc[0].left = pncsp->rgrc[0].left + 0;
 				pncsp->rgrc[0].top = pncsp->rgrc[0].top + 0;
@@ -82,9 +59,14 @@ LRESULT __stdcall WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 				pncsp->rgrc[0].bottom = pncsp->rgrc[0].bottom - 0;
 				return 0;
 			}
-		case WM_SIZE:
-			MainWindow.fireResize();
-			MainWindow.fireRender();
+		case WM_SIZE: switch (wParam) {
+				case SIZE_RESTORED: break;
+				case SIZE_MINIMIZED: break;
+				case SIZE_MAXIMIZED: break;
+				case SIZE_MAXSHOW:
+				case SIZE_MAXHIDE:
+				default: break;
+			}
 			break;
 		case WM_ACTIVATE: {
 			MARGINS margins{
@@ -93,21 +75,22 @@ LRESULT __stdcall WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 				.cyTopHeight = 0,
 				.cyBottomHeight = 0
 			};
-			HRESULT hr = Carlbeks::WindowsInterface::RemoveDefaultCaption(hwnd, &margins);
-		} break;
-		[[unlikely]] case WM_DESTROY:
-			PostQuitMessage(0);
-			return 0;
-		[[unlikely]] case WM_CREATE:
-			SetWindowPos(hwnd, NULL, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER); // Force post NCCALCSIZE
-			break;
-		default:
+			HRESULT hr = RemoveDefaultCaption(hwnd, &margins);
+		}
 		break;
+			_UNLIKELY
+		case WM_DESTROY: PostQuitMessage(0);
+			return 0;
+			_UNLIKELY
+		case WM_CREATE: SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER);// Force post NCCALCSIZE
+			break;
+		default: break;
 	}
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
 int __stdcall wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow) {
+	AllocConsole();
 	WNDCLASSEX wc = { 0 };
 	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.style = CS_HREDRAW | CS_VREDRAW;
@@ -115,26 +98,24 @@ int __stdcall wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCm
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
 	wc.hInstance = hInstance;
-	wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
-	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wc.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
+	wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
 	wc.hbrBackground = (HBRUSH) GetStockObject(BLACK_BRUSH);
 	wc.lpszMenuName = L"None";
 	wc.lpszClassName = ApplicationName.c_str();
 	if (!RegisterClassExW(&wc)) return FALSE;
 	MainInstance = hInstance;
-	MainWindowHandle = CreateWindowExW(0, wc.lpszClassName, wc.lpszClassName, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, hInstance, NULL);
+	MainWindowHandle = CreateWindowExW(0, wc.lpszClassName, wc.lpszClassName, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, hInstance, nullptr);
 	ShowWindow(MainWindowHandle, nCmdShow);
 	Initialize();
-	MainWindow.fireResize();
 	HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(109));
-	MSG msg = { 0 };
-	while (GetMessageW(&msg, NULL, 0, 0)) {
+	MSG msg = { nullptr };
+	while (GetMessageW(&msg, nullptr, 0, 0)) {
 		if (!TranslateAcceleratorW(msg.hwnd, hAccelTable, &msg)) {
 			TranslateMessage(&msg);
 			DispatchMessageW(&msg);
 		}
 	}
 	DestroyAcceleratorTable(hAccelTable);
-	Finalize();
 	return (int) msg.wParam;
 }
