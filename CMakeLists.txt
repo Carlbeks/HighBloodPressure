@@ -18,7 +18,16 @@ enable_testing()
 add_executable(${PROJECT_NAME} main.cpp
         def.h
         InteractManager.cpp
-        InteractManager.h)
+        InteractManager.h
+        Renderer.cpp
+        Renderer.h
+        Game.cpp
+        Game.h
+        Window.cpp
+        Window.h
+        Hud.cpp
+        Hud.h
+        includes.h)
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)

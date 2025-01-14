@@ -2,7 +2,6 @@
 
 #include "def.h"
 
-
 inline BOOL NewProcess(const String& cmdline) noexcept {
 	STARTUPINFOW si = {
 		sizeof(si), nullptr, nullptr, nullptr, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, nullptr, nullptr, nullptr, nullptr
@@ -13,7 +12,7 @@ inline BOOL NewProcess(const String& cmdline) noexcept {
 	return CreateProcessW(nullptr, const_cast<wchar*>(cmdline.c_str()), nullptr, nullptr, 0, 0, nullptr, nullptr, &si, &pi);
 }
 
-inline HRESULT RemoveDefaultCaption(HWND const hWnd, const MARGINS* p) noexcept { return DwmExtendFrameIntoClientArea(hWnd, p); }
+inline HRESULT RemoveDefaultCaption(HWND hWnd, const MARGINS* p) noexcept { return DwmExtendFrameIntoClientArea(hWnd, p); }
 
 inline void ShowConsoleIO() noexcept {
 	AllocConsole();
@@ -26,7 +25,3 @@ inline void ShowConsoleIO() noexcept {
 inline const String ApplicationName = L"Hyblud Presher";
 inline HINSTANCE MainInstance;
 inline HWND MainWindowHandle;
-
-inline void Initialize() {}
-
-inline void Finalize() {}

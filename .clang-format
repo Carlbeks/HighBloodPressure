@@ -46,7 +46,7 @@ AllowAllArgumentsOnNextLine: true # 如果false，强制把函数参数每个换
 AllowAllParametersOfDeclarationOnNextLine: true # 如果false，强制把函数形参每个换行
 AllowBreakBeforeNoexceptSpecifier: Always # 是否允许复合noexcept换行 Never|OnlyWithParen
 AllowShortBlocksOnASingleLine: Always # WIN Always, Empty|Never
-AllowShortCaseLabelsOnASingleLine: true # WIN true, false
+AllowShortCaseLabelsOnASingleLine: false # WIN true, false
 AllowShortCompoundRequirementOnASingleLine: true # BTW true, false
 AllowShortEnumsOnASingleLine: true # WIN true, false
 AllowShortFunctionsOnASingleLine: All # WIN All, None|InlineOnly|Empty|Inline
