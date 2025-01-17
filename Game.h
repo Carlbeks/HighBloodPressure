@@ -5,8 +5,6 @@
 #pragma once
 
 #include "Hud.h"
-#include "InteractManager.h"
-#include "Renderer.h"
 #include "Window.h"
 
 class Game {
@@ -15,19 +13,23 @@ class Game {
 
 public:
 	explicit Game() = default;
-
 	void render() const noexcept {
 		if (window) window->render();
 		hud.render();
 	}
 
-	void setWindow(Window* window) noexcept {
-		if (this->window == window) return;
+	int setWindow(Window* window) noexcept {
+		if (this->window == window) Success();
 		if (this->window) this->window->onClose();
 		this->window = nullptr;
-		if (window && window->onOpen())
+		if (window && window->onOpen()) {
 			this->window = window;
+			Success();
+		}
+		Failed();
 	}
+
+	[[nodiscard]] Window* getWindow() const noexcept { return window; }
 };
 
 inline static Game game = Game();

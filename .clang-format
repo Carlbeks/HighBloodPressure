@@ -121,7 +121,7 @@ CommentPragmas: true
 CompactNamespaces: false # BTW false, true 如果为true，连续的namespace声明会被放在同一行里，除非太长
 # 构造函数参数列表和继承列表的缩进
 ConstructorInitializerIndentWidth: 4 # 4 or 2，尽量与IndentWidth一致
-ContinuationIndentWidth: 4 # 4 or 2，尽量与IndentWidth一致
+ContinuationIndentWidth: 2 # 4 or 2，尽量与IndentWidth一致
 Cpp11BracedListStyle: false # 如果为false，花括号里有东西的时候，会在左花括号右侧、右花括号左侧插入空格
 # BTW false, true
 # 如果为true，会检查文件里最常出现的一种&和*的安排方式，然后统一；

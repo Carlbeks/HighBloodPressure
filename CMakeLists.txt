@@ -7,9 +7,9 @@ add_definitions(-DCINTERFACE)
 add_definitions(-D__CARLBEKS_CMAKE_VSCODE__)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_WIN32_EXECUTABLE true)
-#if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-#add_compile_options(${PROJECT_NAME} -Wno-microsoft-string-literal-from-predefined)
-#endif()
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    add_compile_options(${PROJECT_NAME} -Wno-microsoft-string-literal-from-predefined)
+endif ()
 #add_compile_options(${PROJECT_NAME} /utf-8)
 
 include(CTest)
@@ -27,7 +27,9 @@ add_executable(${PROJECT_NAME} main.cpp
         Window.h
         Hud.cpp
         Hud.h
-        includes.h)
+        includes.h
+        Text.h
+        Chars.h)
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)

@@ -19,10 +19,7 @@ public:
 	static void initialize() noexcept;
 	explicit Renderer() = default;
 
-	void resize(const int width, const int height) noexcept(false) {
-		windowWidth = width;
-		windowHeight = height;
-	}
+	void resize(int width, int height) noexcept(false);
 
 	[[nodiscard]] int getWidth() const noexcept { return windowWidth; }
 	[[nodiscard]] int getHeight() const noexcept { return windowHeight; }
