@@ -29,7 +29,8 @@ add_executable(${PROJECT_NAME} main.cpp
         Hud.h
         includes.h
         Text.h
-        Chars.h)
+        Chars.h
+        Text.cpp)
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)

@@ -5,7 +5,7 @@
 #pragma once
 #include "Renderer.h"
 
-class Hud : public Renderable {
+class Hud : public IRenderable {
 public:
 	void render() const noexcept override;
 };

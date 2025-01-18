@@ -8,6 +8,11 @@
 
 class IdentifiedText {};
 
+/**
+ * 注意一些默认值。
+ * FontID=0，表示继承使用默认字体；
+ * color和background=0xffffffff，表示继承使用默认颜色；
+ */
 class RenderableString {
 	struct StringConfig {
 		String text;
@@ -51,6 +56,20 @@ class RenderableString {
 			return ret;
 		}
 
+		[[nodiscard]] StringConfig copy() const noexcept {
+			StringConfig ret;
+			ret.idFont = idFont;
+			ret.text = text;
+			ret.idFont = idFont;
+			ret.color = color;
+			ret.background = background;
+			ret.bold = bold;
+			ret.italic = italic;
+			ret.underline = underline;
+			ret.strikeThrough = strikeThrough;
+			return ret;
+		}
+
 		[[nodiscard]] String toString() const noexcept {
 			String ret;
 			ret.append(L"#");
@@ -71,6 +90,8 @@ class RenderableString {
 	};
 
 	List<StringConfig> configs;
+	using Iterator = List<StringConfig>::iterator;
+	using ConstIterator = List<StringConfig>::const_iterator;
 
 public:
 	explicit RenderableString(const String& string): RenderableString(string.c_str(), string.length()) {}
@@ -262,4 +283,96 @@ private:
 		}
 		configs.push_back(std::move(config));
 	}
+
+	RenderableString& append(const RenderableString& other) {
+		auto iterator = other.configs.cbegin();
+		int flags = 0;
+		bool clr = true, bg = true, font = true;
+		unsigned int color = configs.back().color;
+		unsigned int background = configs.back().background;
+		wchar idFont = configs.back().idFont;
+		while (iterator != other.configs.cend()) {
+			if (flags >= 3) break;
+			StringConfig config = iterator->copy();
+			if (font) {
+				if (config.idFont == idFont || config.idFont != 0) {
+					font = false;
+					++flags;
+				} else config.idFont = idFont;
+			}
+			if (clr) {
+				if (config.color == color || config.color != 0xffffffff) {
+					clr = false;
+					++flags;
+				} else config.color = color;
+			}
+			if (bg) {
+				if (config.background == background || config.background != 0xffffffff) {
+					bg = false;
+					++flags;
+				} else config.background = background;
+			}
+			configs.push_back(std::move(config));
+			++iterator;
+		}
+		while (iterator != other.configs.cend()) configs.push_back(iterator->copy());
+		return *this;
+	}
+
+	RenderableString& append(const String& other) {
+		parseAppend(other.c_str(), other.length());
+		return *this;
+	}
 };
+
+interface Text {
+	virtual ~Text() = default;
+	virtual const String& getText() const noexcept = 0;
+};
+
+class Translator;
+
+class TranslatableText final : public Text {
+	const String idSrc;
+	mutable const String* target = nullptr;
+	mutable QWORD langConfig = 0;
+
+public:
+	explicit TranslatableText(const String& id) : idSrc(id) {}
+	explicit TranslatableText(String&& id) : idSrc(std::move(id)) {}
+	const String& getText() const noexcept override;
+};
+
+struct Language {
+	Map<String, String> translateTable;
+	int id = 1;
+};
+
+class Translator {
+	Map<String, int> langMap{};
+	List<Language> langList{};
+	String lang = L"zh-cn";
+	String nullText = L"<translator-null>";
+	QWORD langConfig = 1;
+	int idLangMax = 1;
+	using IterID = Map<String, String>::const_iterator;
+	using IterLang = List<Language>::const_iterator;
+
+public:
+	explicit Translator() { langMap.insert(std::make_pair(String(L"zh-cn"), 1)); }
+	void addLang(const String& lang) noexcept(this->langMap.insert(std::make_pair(lang, this->idLangMax))) { langMap.insert(std::make_pair(lang, ++idLangMax)); }
+	void addLang(String&& lang) noexcept(this->langMap.insert(std::make_pair(lang, this->idLangMax))) { langMap.insert(std::make_pair(lang, ++idLangMax)); }
+	void loadLang();
+
+	const String* getText(const String& id) const noexcept {
+		for (const auto& [translateTable, _] : langList) {
+			IterID iterator = translateTable.find(id);
+			if (iterator != translateTable.cend()) return &iterator->second;
+		}
+		return &nullText;
+	}
+
+	int getConfigVersion() const noexcept { return langConfig; }
+};
+
+inline static Translator translator = Translator();

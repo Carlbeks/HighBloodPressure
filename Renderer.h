@@ -6,8 +6,13 @@
 
 #include "def.h"
 
-interface Renderable {
-	virtual ~Renderable() = default;
+/**
+ * 用于标记相对位置。
+ */
+enum class Location { LEFT_TOP, LEFT, LEFT_BOTTOM, TOP, CENTER, BOTTOM, RIGHT_TOP, RIGHT, RIGHT_BOTTOM };
+
+interface IRenderable {
+	virtual ~IRenderable() = default;
 	virtual void render() const noexcept = 0;
 };
 

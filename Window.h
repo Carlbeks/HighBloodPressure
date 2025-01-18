@@ -7,19 +7,24 @@
 #include "def.h"
 #include "Renderer.h"
 
-class Widget : public Renderable {
+enum class MouseActionCode : char {
+	MAC_MOVE, MAC_HOVER, MAC_DOWN, MAC_UP, MAC_DOUBLE
+};
+
+class Widget : public IRenderable {
 protected:
 	int left = 0, top = 0, width = 0, height = 0;
 	mutable bool hasMouse = false;
 
 public:
-	using Action = Function<void()>;
+	using Action = Function<void(int)>;
 	double x, y, w, h;
-	Action hover;
-	Action longHover;
-	Action mouseDown;
-	Action mouseUp;
-	Action mouseLeave;
+	Action hover;// 传入int忽略
+	Action longHover;// 传入int表示时间
+	Action mouseDown;// 传入int表示变更按键。0左, 1中, 2右
+	Action mouseUp;// 传入int表示变更按键。0左, 1中, 2右
+	Action mouseLeave;// 传入int忽略
+	Action mouseClick;// 传入int表示变更按键。0x0左, 0x1中, 0x2右；0xf表示是否双击
 	explicit Widget(const double x, const double y, const double w, const double h) : x(x), y(y), w(w), h(h) {}
 	void render() const noexcept override {}
 	virtual void onResize() {}
@@ -27,19 +32,44 @@ public:
 	virtual bool isMouseIn(int x, int y) noexcept {
 		x -= left;
 		y -= top;
-		if (0 <= x and x <= width and 0 <= y and y <= height) hasMouse = true;
-		hasMouse = false;
-		return hasMouse;
+		return 0 <= x and x <= width and 0 <= y and y <= height;
 	}
 
-	virtual void onHover() noexcept { if (hover) hover(); }
-	virtual void onLongHover() noexcept { if (longHover) longHover(); }
-	virtual void onMouseDown() noexcept { if (mouseDown) mouseDown(); }
-	virtual void onMouseUp() noexcept { if (mouseUp) mouseUp(); }
-	virtual void onMouseLeave() noexcept { if (mouseLeave) mouseLeave(); }
+	virtual void onHover(const int value) noexcept { if (hover) hover(value); }
+	virtual void onLongHover(const int value) noexcept { if (longHover) longHover(value); }
+	virtual void onMouseDown(const int value) noexcept { if (mouseDown) mouseDown(value); }
+	virtual void onMouseUp(const int value) noexcept { if (mouseUp) mouseUp(value); }
+	virtual void onMouseLeave(const int value) noexcept { if (mouseLeave) mouseLeave(value); }
+	virtual void onMouseClick(const int value) noexcept { if (mouseClick) mouseClick(value); }
+
+	virtual void passEvent(int action, int value, int x, int y) noexcept {
+		if (!isMouseIn(x, y)) {
+			if (hasMouse) onMouseLeave(0);
+			hasMouse = false;
+		}
+		hasMouse = true;
+		switch (action & 0xf) {
+			case MouseActionCode::MAC_HOVER:
+				onLongHover(0);
+				break;
+			case MouseActionCode::MAC_MOVE:
+				onHover(0);
+				break;
+			case MouseActionCode::MAC_DOWN:
+				onMouseDown(value);
+				break;
+			case MouseActionCode::MAC_UP:
+				onMouseUp(value);
+				break;
+			case MouseActionCode::MAC_DOUBLE:
+				onMouseClick(1);
+				break;
+			default:
+		}
+	}
 };
 
-class Window : public Renderable {
+class Window : public IRenderable {
 protected:
 	List<Widget*> widgets;
 
