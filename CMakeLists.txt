@@ -28,9 +28,15 @@ add_executable(${PROJECT_NAME} main.cpp
         Hud.cpp
         Hud.h
         includes.h
-        Text.h
+        IText.h
         Chars.h
-        Text.cpp)
+        IText.cpp
+        xWindows.h
+        exception.h
+        def.cpp
+        TestCode.h
+        TextureManager.cpp
+        TextureManager.h)
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)

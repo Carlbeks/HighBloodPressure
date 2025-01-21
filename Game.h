@@ -7,13 +7,14 @@
 #include "Hud.h"
 #include "Window.h"
 
-class Game {
+class Game : public IRenderable {
 	Hud hud = Hud();
 	Window* window = nullptr;
 
 public:
 	explicit Game() = default;
-	void render() const noexcept {
+	static void initialize() noexcept;
+	void render() const noexcept override {
 		if (window) window->render();
 		hud.render();
 	}

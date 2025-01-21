@@ -6,6 +6,7 @@
 
 #include "def.h"
 #include "Renderer.h"
+#include "IText.h"
 
 enum class MouseActionCode : char {
 	MAC_MOVE, MAC_HOVER, MAC_DOWN, MAC_UP, MAC_DOUBLE
@@ -17,6 +18,7 @@ protected:
 	mutable bool hasMouse = false;
 
 public:
+	Location location;
 	using Action = Function<void(int)>;
 	double x, y, w, h;
 	Action hover;// 传入int忽略
@@ -25,7 +27,7 @@ public:
 	Action mouseUp;// 传入int表示变更按键。0左, 1中, 2右
 	Action mouseLeave;// 传入int忽略
 	Action mouseClick;// 传入int表示变更按键。0x0左, 0x1中, 0x2右；0xf表示是否双击
-	explicit Widget(const double x, const double y, const double w, const double h) : x(x), y(y), w(w), h(h) {}
+	explicit Widget(const double x, const double y, const double w, const double h, Location location) : x(x), y(y), w(w), h(h), location(location) {}
 	void render() const noexcept override {}
 	virtual void onResize() {}
 
@@ -48,23 +50,24 @@ public:
 			hasMouse = false;
 		}
 		hasMouse = true;
-		switch (action & 0xf) {
-			case MouseActionCode::MAC_HOVER:
+		switch (static_cast<char>(action & 0xf)) {
+			case static_cast<char>(MouseActionCode::MAC_HOVER):
 				onLongHover(0);
 				break;
-			case MouseActionCode::MAC_MOVE:
+			case static_cast<char>(MouseActionCode::MAC_MOVE):
 				onHover(0);
 				break;
-			case MouseActionCode::MAC_DOWN:
+			case static_cast<char>(MouseActionCode::MAC_DOWN):
 				onMouseDown(value);
 				break;
-			case MouseActionCode::MAC_UP:
+			case static_cast<char>(MouseActionCode::MAC_UP):
 				onMouseUp(value);
 				break;
-			case MouseActionCode::MAC_DOUBLE:
+			case static_cast<char>(MouseActionCode::MAC_DOUBLE):
 				onMouseClick(1);
 				break;
 			default:
+				break;
 		}
 	}
 };
@@ -74,6 +77,8 @@ protected:
 	List<Widget*> widgets;
 
 	Window() = default;
+
+	~Window() override { for (Widget*& widget : widgets) { delete widget; } }
 
 public:
 	/**
@@ -101,5 +106,6 @@ public:
 
 class Button final : public Widget {
 public:
-	explicit Button(const double x, const double y, const double w, const double h) : Widget(x, y, w, h) {}
+	ObjectHolder<IText> name;
+	explicit Button(const double x, const double y, const double w, const double h, Location location, ObjectHolder<IText> text) : Widget(x, y, w, h, location), name(text) {}
 };

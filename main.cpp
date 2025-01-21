@@ -1,6 +1,7 @@
 
 #include "includes.h"
-#include "Text.h"
+#include "IText.h"
+#include "TestCode.h"
 
 LRESULT __stdcall WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	switch (uMsg) {
@@ -159,20 +160,19 @@ int __stdcall wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCm
 	ShowWindow(MainWindowHandle, nCmdShow);
 	InteractManager::initialize();
 	Renderer::initialize();
+	Game::initialize();
 	SetConsoleOutputCP(65001);
-	const String string = String(L"\\#12345678Hello\\/\\f\1Well\\.87654321你好\\r\\r\\u\\-");
-	std::cout << "你好" << std::endl;
-	std::wcout.imbue(std::locale("zh_CN"));
-	std::wcout
-		<< sizeof(L"你好") << " " << sizeof("Hu") << std::endl
-		<< L"GetConsoleOutputCP => " << GetConsoleOutputCP() << std::endl
-#if defined(UNICODE)
-		<< L"UNICODE" << std::endl
-#else
-		<< L"Non-UNICODE" << std::endl
-#endif
-		<< string << std::endl
-		<< RenderableString(string).toString() << std::endl;
+	{
+		const String string = String(L"\\#12345678Hello\\/\\f\1Well\\.87654321你好\\r\\r\\u\\-");
+		std::cout << "你好" << std::endl;
+		std::wcout.imbue(std::locale("zh_CN"));
+		std::wcout
+			<< sizeof(L"你好") << " " << sizeof("Hu") << std::endl
+			<< L"GetConsoleOutputCP => " << GetConsoleOutputCP() << std::endl
+			<< string << std::endl
+			<< RenderableString(string).toString() << std::endl;
+		test();
+	}
 	HACCEL hAccelTable = LoadAcceleratorsW(hInstance, MAKEINTRESOURCE(109));
 	MSG msg = { nullptr };
 	while (GetMessageW(&msg, nullptr, 0, 0)) {

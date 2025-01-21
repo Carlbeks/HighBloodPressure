@@ -3,3 +3,6 @@
 //
 
 #include "Game.h"
+
+void Game::initialize() noexcept { renderer.setGame(game); }
+
