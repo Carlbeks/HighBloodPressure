@@ -12,13 +12,11 @@ enum class MouseActionCode : char {
 	MAC_MOVE, MAC_HOVER, MAC_DOWN, MAC_UP, MAC_DOUBLE
 };
 
-class Widget : public IRenderable {
+class Widget : public IRenderable, public ITickable {
 protected:
 	int left = 0, top = 0, width = 0, height = 0;
-	mutable bool hasMouse = false;
 
 public:
-	Location location;
 	using Action = Function<void(int)>;
 	double x, y, w, h;
 	Action hover;// 传入int忽略
@@ -27,8 +25,24 @@ public:
 	Action mouseUp;// 传入int表示变更按键。0左, 1中, 2右
 	Action mouseLeave;// 传入int忽略
 	Action mouseClick;// 传入int表示变更按键。0x0左, 0x1中, 0x2右；0xf表示是否双击
+	Color backgroundColor;
+	Color foregroundColor;
+
+protected:
+	mutable bool hasMouse = false;
+
+public:
+	Location location;
+
+protected:
+	char unused[6] {};
+
+public:
+	unsigned int colorSelector(const Color& clr, const Widget& widget) const {
+		return hasMouse ? clr.hover : clr.inactive;
+	}
+
 	explicit Widget(const double x, const double y, const double w, const double h, Location location) : x(x), y(y), w(w), h(h), location(location) {}
-	void render() const noexcept override {}
 	virtual void onResize() {}
 
 	virtual bool isMouseIn(int x, int y) noexcept {
@@ -44,7 +58,7 @@ public:
 	virtual void onMouseLeave(const int value) noexcept { if (mouseLeave) mouseLeave(value); }
 	virtual void onMouseClick(const int value) noexcept { if (mouseClick) mouseClick(value); }
 
-	virtual void passEvent(int action, int value, int x, int y) noexcept {
+	virtual void passEvent(const int action, const int value, const int x, const int y) noexcept {
 		if (!isMouseIn(x, y)) {
 			if (hasMouse) onMouseLeave(0);
 			hasMouse = false;
@@ -72,7 +86,7 @@ public:
 	}
 };
 
-class Window : public IRenderable {
+class Window : public IRenderable, public ITickable {
 protected:
 	List<Widget*> widgets;
 
@@ -81,6 +95,8 @@ protected:
 	~Window() override { for (Widget*& widget : widgets) { delete widget; } }
 
 public:
+	void render() const noexcept override;
+	void tick() noexcept override;
 	/**
 	 * 在Game.setWindow()时，本窗口开启时调用。
 	 * 不应当外部调用。
@@ -104,8 +120,10 @@ public:
 	void onClose() override {}
 };
 
-class Button final : public Widget {
+class Button : public Widget {
 public:
 	ObjectHolder<IText> name;
-	explicit Button(const double x, const double y, const double w, const double h, Location location, ObjectHolder<IText> text) : Widget(x, y, w, h, location), name(text) {}
+	explicit Button(const double x, const double y, const double w, const double h, const Location location, const ObjectHolder<IText>& text) : Widget(x, y, w, h, location), name(text) {}
+	void render() const noexcept override;
+	void tick() noexcept override {}
 };

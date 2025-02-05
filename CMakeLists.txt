@@ -36,7 +36,8 @@ add_executable(${PROJECT_NAME} main.cpp
         def.cpp
         TestCode.h
         TextureManager.cpp
-        TextureManager.h)
+        TextureManager.h
+        exception.cpp)
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)

@@ -7,7 +7,10 @@
 #include "Game.h"
 #include "hbp.h"
 
-void Renderer::initialize() noexcept { MainDC = GetDC(MainWindowHandle); }
+void Renderer::initialize() noexcept {
+	MainDC = GetDC(MainWindowHandle);
+	assistDC = CreateCompatibleDC(MainDC);
+}
 
 void Renderer::resize(const int width, const int height) noexcept(false) {
 	windowWidth = width;
@@ -19,3 +22,5 @@ void Renderer::resize(const int width, const int height) noexcept(false) {
 	}
 	if (game.getWindow()) game.getWindow()->onResize();
 }
+
+inline Renderer renderer = Renderer();

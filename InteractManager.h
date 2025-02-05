@@ -21,7 +21,25 @@ struct KeyStatus {
 		pressTimes = 0;
 	}
 
-	[[nodiscard]] String toString() const noexcept { return L"KeyStatus: { name = \"" + name + L"\"; pressTimes = " + std::to_wstring(pressTimes) + L"; pressed = " + (pressed ? L"true }" : L"false }"); }
+	[[nodiscard]] String toString() const noexcept { return L"KeyStatus: { name = \"" + name + L"\"; pressTimes = " + std::to_wstring(pressTimes) + L"; pressed = " + (pressed ? L"true; }" : L"false; }"); }
+};
+
+struct MouseStatus {
+	String name;
+	unsigned int pressTimes = 0;
+	bool pressed = false;
+	bool notDealt = false;
+	bool longHold = false;
+
+	[[nodiscard]] bool isPressed() const noexcept { return pressed; }
+	[[nodiscard]] unsigned int wasPressed() const noexcept { return pressTimes; }
+
+	void deals() noexcept {
+		notDealt = false;
+		pressTimes = 0;
+	}
+
+	[[nodiscard]] String toString() const noexcept { return L"MouseStatus: { name = \""+ name + L"\"; pressTimes = " + std::to_wstring(pressTimes) + L"; pressed = " + (pressed ? L"true, longHold = " : L"false, longHold = ") + (longHold ? L"true; }" : L"false; }") ; }
 };
 
 struct KeyBinding;

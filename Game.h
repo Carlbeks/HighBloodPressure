@@ -8,15 +8,22 @@
 #include "Window.h"
 
 class Game : public IRenderable {
+	friend void gameThread();
 	Hud hud = Hud();
 	Window* window = nullptr;
-
+	FloatWindow* floatWindow;
+	QWORD currentTick = 0;
 public:
-	explicit Game() = default;
+	explicit Game();
+	~Game() override;
 	static void initialize() noexcept;
+
 	void render() const noexcept override {
-		if (window) window->render();
+		renderer.gameStartRender();
 		hud.render();
+		if (window) window->render();
+		if (floatWindow) floatWindow->render();
+		renderer.gameEndRender();
 	}
 
 	int setWindow(Window* window) noexcept {
@@ -31,6 +38,14 @@ public:
 	}
 
 	[[nodiscard]] Window* getWindow() const noexcept { return window; }
+	[[nodiscard]] QWORD getTick() const noexcept { return currentTick; }
+
+	void tick() noexcept {
+		++currentTick;
+		hud.tick();
+		if (window) window->tick();
+		if (floatWindow) floatWindow->tick();
+	}
 };
 
-inline static Game game = Game();
+extern Game game;

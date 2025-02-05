@@ -14,14 +14,18 @@ inline BOOL NewProcess(const String& cmdline) noexcept {
 
 inline HRESULT RemoveDefaultCaption(HWND hWnd, const MARGINS* p) noexcept { return DwmExtendFrameIntoClientArea(hWnd, p); }
 
-inline void ShowConsoleIO() noexcept {
+inline bool ShowConsoleIO() noexcept {
 	AllocConsole();
 	FILE* pCout;
 	freopen_s(&pCout, "CONOUT$", "w", stdout);
 	FILE* pCin;
 	freopen_s(&pCin, "CONIN$", "r", stdin);
+	return true;
 }
 
 inline const String ApplicationName = L"Hyblud Presher";
 inline HINSTANCE MainInstance;
 inline HWND MainWindowHandle;
+inline Thread GameThread;
+inline Thread RenderThread;
+inline static bool isRunning = ShowConsoleIO();

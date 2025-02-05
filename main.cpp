@@ -26,7 +26,7 @@ LRESULT __stdcall WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 			if (renderer.getWidth() - xPos < 30) {
 				if (yPos < 30) return HTTOPRIGHT;
 				if (renderer.getHeight() - yPos < 30) return HTBOTTOMRIGHT;
-				return HTBOTTOM;
+				return HTRIGHT;
 			}
 			if (yPos < 30) return HTTOP;
 			if (renderer.getHeight() - yPos < 30) return HTBOTTOM;
@@ -128,6 +128,7 @@ LRESULT __stdcall WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 			_UNLIKELY
 		case WM_DESTROY:
 			PostQuitMessage(0);
+			isRunning = false;
 			return 0;
 			_UNLIKELY
 		case WM_CREATE:
@@ -139,8 +140,39 @@ LRESULT __stdcall WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
+void gameThread() {
+	using namespace std::chrono;
+	using Time = time_point<system_clock>;
+	Time lastTick = system_clock::now();
+	Time thisTime;
+	while (isRunning) {
+		thisTime = system_clock::now();
+		if (thisTime - lastTick < milliseconds(45)) {
+			Sleep(1);
+			continue;
+		}
+		game.tick();
+		lastTick = thisTime;
+	}
+}
+
+void renderThread() {
+	using namespace std::chrono;
+	using Time = time_point<system_clock>;
+	Time lastRender = system_clock::now();
+	Time thisTime;
+	while (isRunning) {
+		thisTime = system_clock::now();
+		if (thisTime - lastRender < milliseconds(12)) {
+			Sleep(1);
+			continue;
+		}
+		game.render();
+		lastRender = thisTime;
+	}
+}
+
 int __stdcall wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow) {
-	ShowConsoleIO();
 	WNDCLASSEX wc = {};
 	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.style = CS_HREDRAW | CS_VREDRAW;
@@ -175,6 +207,8 @@ int __stdcall wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCm
 	}
 	HACCEL hAccelTable = LoadAcceleratorsW(hInstance, MAKEINTRESOURCE(109));
 	MSG msg = { nullptr };
+	GameThread = Thread(gameThread);
+	RenderThread = Thread(renderThread);
 	while (GetMessageW(&msg, nullptr, 0, 0)) {
 		if (!TranslateAcceleratorW(msg.hwnd, hAccelTable, &msg)) {
 			TranslateMessage(&msg);
@@ -182,5 +216,8 @@ int __stdcall wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCm
 		}
 	}
 	DestroyAcceleratorTable(hAccelTable);
+	if (GameThread.joinable()) GameThread.join();
+	if (RenderThread.joinable()) RenderThread.join();
+	_wsystem(L"pause");
 	return (int) msg.wParam;
 }

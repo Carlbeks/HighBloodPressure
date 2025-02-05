@@ -62,19 +62,21 @@ class TextureManager {
 	Font* defaultFont = nullptr;
 	using IterFont = Map<int, Font>::const_iterator;
 	using IterTexture = Map<String, ObjectHolder<ITexture>>::const_iterator;
+
 public:
 	TextureManager() {
 		try {
 			fonts.insert(std::make_pair(0, Font(L"Arial")));
 			defaultFont = &fonts.at(0);
-		}
-		catch (...) {
+		} catch (const std::out_of_range& e) {
 
-		}
+		} catch (const ArrayIndexOutOfBoundException& e){}
 	}
-	Font& getFont(const int id) const noexcept {
+
+	const Font& getFont(const int id) const noexcept {
 		IterFont iterator = fonts.find(id);
-		if (iterator == fonts.cend()) return
+		if (iterator == fonts.cend()) return *defaultFont;
+		return iterator->second;
 	}
 };
 
