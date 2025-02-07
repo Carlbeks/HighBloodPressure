@@ -15,7 +15,9 @@ endif ()
 include(CTest)
 enable_testing()
 
-add_executable(${PROJECT_NAME} main.cpp
+add_executable(${PROJECT_NAME}
+        main.cpp
+        def.cpp
         def.h
         InteractManager.cpp
         InteractManager.h
@@ -27,17 +29,18 @@ add_executable(${PROJECT_NAME} main.cpp
         Window.h
         Hud.cpp
         Hud.h
-        includes.h
-        IText.h
-        Chars.h
         IText.cpp
-        xWindows.h
+        IText.h
+        exception.cpp
         exception.h
-        def.cpp
-        TestCode.h
         TextureManager.cpp
         TextureManager.h
-        exception.cpp)
+
+        includes.h
+        Chars.h
+        xWindows.h
+        TestCode.h
+)
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
