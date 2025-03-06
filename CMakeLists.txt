@@ -14,6 +14,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     add_compile_options(/source-charset:utf-8)
     add_compile_options(/execution-charset:utf-8)
 endif ()
+add_compile_options(/Zc:preprocessor)
 
 include(CTest)
 enable_testing()

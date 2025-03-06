@@ -30,10 +30,10 @@ class Garbage final : public IGarbage {
 
 public:
 	explicit Garbage(T* ptr) : IGarbage(ptr) {}
-	void collect() override { delete static_cast<T*>(ptr); }
+	void collect() override { delete static_cast<T*>(deallocating(ptr)); }
 
 protected:
-	void deleteThis() override { delete this; }
+	void deleteThis() override { delete deallocating(this); }
 };
 
 class GarbageCollector {
@@ -76,7 +76,7 @@ public:
 	/** 只能在gameThread调用 */
 	template <TypeName T>
 	void submit(T* ptr) noexcept(false) {
-		IGarbage* garbage = new Garbage<T>(ptr);
+		IGarbage* garbage = allocatedFor(new Garbage<T>(ptr));
 		if (IGarbage* end = submittedEnd) { // 后续添加，可能存在线程竞争
 			while (end->next) end = end->next; // 理论上不会进入循环，但防止万一
 			end->next = garbage;

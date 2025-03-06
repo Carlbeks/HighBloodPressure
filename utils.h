@@ -170,7 +170,7 @@ bool AnywhereIterator<T, L>::operator==(const AnywhereIteratorEnd& other) const 
 
 template <typename T, typename L>
 int AnywhereEditableList<T, L>::pushCopy(T* value) noexcept {
-	T* nv = new T(*value);
+	T* nv = allocatedFor(new T(*value));
 	return pushNewed(nv);
 }
 
@@ -191,7 +191,7 @@ int AnywhereEditableList<T, L>::pushThis(T* value) noexcept {
 template <typename T, typename L>
 int AnywhereEditableList<T, L>::pushNewed(T* value) noexcept {
 	const int ret = pushThis(value);
-	if (ret) delete value;
+	if (ret) delete deallocating(value);
 	else value->managedByList = true;
 	return ret;
 }
@@ -205,6 +205,6 @@ int AnywhereEditableList<T, L>::pop(T* value) noexcept {
 	value->list = nullptr;
 	value->next->prev = value->prev;
 	value->prev->next = value->next;
-	if (value->managedByList) delete value;
+	if (value->managedByList) delete deallocating(value);
 	Success();
 }
