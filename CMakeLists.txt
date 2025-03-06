@@ -10,7 +10,10 @@ set(CMAKE_WIN32_EXECUTABLE true)
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     add_compile_options(${PROJECT_NAME} -Wno-microsoft-string-literal-from-predefined)
 endif ()
-#add_compile_options(${PROJECT_NAME} /utf-8)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    add_compile_options(/source-charset:utf-8)
+    add_compile_options(/execution-charset:utf-8)
+endif ()
 
 include(CTest)
 enable_testing()
@@ -44,3 +47,4 @@ add_executable(${PROJECT_NAME}
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
+
