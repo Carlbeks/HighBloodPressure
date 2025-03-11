@@ -17,7 +17,7 @@ public:
 	explicit Task(const Function<void(Task& self)>& func) : func(func) {}
 	explicit Task(Function<void(Task& self)>&& func) : func(std::move(func)) {}
 	void schedulePop(const bool pop) noexcept { reserved[0] = pop; }
-	bool scheduledPop() const noexcept { return reserved[0]; }
+	[[nodiscard]] bool scheduledPop() const noexcept { return reserved[0]; }
 
 	int pop() noexcept override {
 		schedulePop(true);
@@ -32,7 +32,10 @@ public:
 	void runAll() {
 		for (Task& task : tasks) {
 			task.func(task);
-			if (task.scheduledPop()) tasks.pop(&task);
+			if (task.scheduledPop()) {
+				task.schedulePop(false);
+				tasks.pop(&task);
+			}
 		}
 	}
 

@@ -29,8 +29,8 @@ private:
 	AnywhereEditable* prev = nullptr;
 	AnywhereEditable* next = nullptr;
 	AnywhereEditableList<T, L>* list = nullptr; // 指示自身属于某个列表
-protected:
 	bool managedByList = false; // 指示是否在列表内管理内存，而非列表外管理内存
+public:
 	byte reserved[7]{}; // reserved[0]: Task::schedulePop
 
 public:
@@ -146,9 +146,9 @@ public:
 	int pushNewed(T* value) noexcept;
 	virtual int pop(T* value) noexcept;
 	AnywhereIterator<T, L> begin() noexcept { return AnywhereIterator<T, L>(head.next); }
-	AnywhereIteratorEnd end() noexcept { return AnywhereIteratorEnd(); }
+	[[nodiscard]] AnywhereIteratorEnd end() noexcept { return {}; }
 	AnywhereIterator<T, L> begin() const noexcept { return AnywhereIterator<T, L>(head.next); }
-	AnywhereIteratorEnd end() const noexcept { return AnywhereIteratorEnd(); }
+	[[nodiscard]] AnywhereIteratorEnd end() const noexcept { return {}; }
 	AnywhereEditable<T, L>* front() const noexcept { return head.next == &tail ? nullptr : head.next; }
 	AnywhereEditable<T, L>* back() const noexcept { return tail.prev == &head ? nullptr : tail.prev; }
 };
