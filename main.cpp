@@ -3,7 +3,7 @@
 #include "IText.h"
 #include "TestCode.h"
 
-LRESULT __stdcall WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+LRESULT __stdcall WndProc(const HWND hwnd, const UINT uMsg, const WPARAM wParam, const LPARAM lParam) {
 	switch (uMsg) {
 			[[likely]]
 		case WM_PAINT: {
@@ -68,7 +68,7 @@ LRESULT __stdcall WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 				default:
 					break;
 			}
-			renderer.windowSize = wParam;
+			renderer.windowSize = static_cast<byte>(wParam);
 			break;
 		case WM_KEYDOWN:
 			interactManager.update(static_cast<int>(wParam), true);
@@ -86,40 +86,40 @@ LRESULT __stdcall WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		case WM_NCLBUTTONDOWN:
 			if (interactManager.isInClientCaption()) {
 				interactManager.update(VK_LBUTTON, true);
-				game.passEvent(MouseActionCode::MAC_DOWN, interactManager.getMouseButtonCode() | static_cast<int>(MouseButtonCodeEnum::MBC_L_CHANGE), interactManager.getMouseX(), interactManager.getMouseY());
+				game.passEvent(MouseActionCode::MAC_DOWN, interactManager.getMouseButtonCode() | static_cast<unsigned int>(MouseButtonCodeEnum::MBC_L_CHANGE), interactManager.getMouseX(), interactManager.getMouseY());
 			}
 			break;
 		case WM_RBUTTONDOWN:
 		case WM_NCRBUTTONDOWN:
 			if (interactManager.isInClientCaption()) {
 				interactManager.update(VK_RBUTTON, true);
-				game.passEvent(MouseActionCode::MAC_DOWN, interactManager.getMouseButtonCode() | static_cast<int>(MouseButtonCodeEnum::MBC_R_CHANGE), interactManager.getMouseX(), interactManager.getMouseY());
+				game.passEvent(MouseActionCode::MAC_DOWN, interactManager.getMouseButtonCode() | static_cast<unsigned int>(MouseButtonCodeEnum::MBC_R_CHANGE), interactManager.getMouseX(), interactManager.getMouseY());
 			}
 			break;
-		case WM_APP_LBUTTONUP: // case WM_LBUTTONUP: case WM_NCLBUTTONUP:
+		case WM_APP_LBUTTONUP:
 			if (interactManager.isInClientCaption()) {
 				interactManager.update(VK_LBUTTON, false);
-				game.passEvent(MouseActionCode::MAC_UP, interactManager.getMouseButtonCode() | static_cast<int>(MouseButtonCodeEnum::MBC_L_CHANGE), interactManager.getMouseX(), interactManager.getMouseY());
+				game.passEvent(MouseActionCode::MAC_UP, interactManager.getMouseButtonCode() | static_cast<unsigned int>(MouseButtonCodeEnum::MBC_L_CHANGE), interactManager.getMouseX(), interactManager.getMouseY());
 			}
 			break;
 		case WM_RBUTTONUP:
 		case WM_NCRBUTTONUP:
 			if (interactManager.isInClientCaption()) {
 				interactManager.update(VK_RBUTTON, false);
-				game.passEvent(MouseActionCode::MAC_UP, interactManager.getMouseButtonCode() | static_cast<int>(MouseButtonCodeEnum::MBC_R_CHANGE), interactManager.getMouseX(), interactManager.getMouseY());
+				game.passEvent(MouseActionCode::MAC_UP, interactManager.getMouseButtonCode() | static_cast<unsigned int>(MouseButtonCodeEnum::MBC_R_CHANGE), interactManager.getMouseX(), interactManager.getMouseY());
 			}
 			break;
-		case WM_APP_MBUTTONDOWN: // case WM_MBUTTONDOWN: case WM_NCMBUTTONDOWN:
+		case WM_APP_MBUTTONDOWN:
 			if (interactManager.isInClientCaption()) {
-				if (wParam & 0x10) interactManager.update(VK_MBUTTON, true);
-				game.passEvent(MouseActionCode::MAC_DOWN, interactManager.getMouseButtonCode() | static_cast<int>(MouseButtonCodeEnum::MBC_M_CHANGE), interactManager.getMouseX(), interactManager.getMouseY());
+				if (static_cast<QWORD>(wParam) & 0x10u) interactManager.update(VK_MBUTTON, true);
+				game.passEvent(MouseActionCode::MAC_DOWN, interactManager.getMouseButtonCode() | static_cast<unsigned int>(MouseButtonCodeEnum::MBC_M_CHANGE), interactManager.getMouseX(), interactManager.getMouseY());
 			}
 			break;
 		case WM_MBUTTONUP:
 		case WM_NCMBUTTONUP:
 			if (interactManager.isInClientCaption()) {
 				interactManager.update(VK_MBUTTON, false);
-				game.passEvent(MouseActionCode::MAC_UP, interactManager.getMouseButtonCode() | static_cast<int>(MouseButtonCodeEnum::MBC_M_CHANGE), interactManager.getMouseX(), interactManager.getMouseY());
+				game.passEvent(MouseActionCode::MAC_UP, interactManager.getMouseButtonCode() | static_cast<unsigned int>(MouseButtonCodeEnum::MBC_M_CHANGE), interactManager.getMouseX(), interactManager.getMouseY());
 			}
 			break;
 		case WM_MOUSEWHEEL:
@@ -138,23 +138,22 @@ LRESULT __stdcall WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 			if (!interactManager.isInWindow()) game.passEvent(MouseActionCode::MAC_LEAVE, 0, interactManager.getMouseX(), interactManager.getMouseY());
 			break;
 		case WM_DWMCOMPOSITIONCHANGED: {
-			MARGINS margins{
+			constexpr MARGINS margins{
 				.cxLeftWidth = 0,
 				.cxRightWidth = 0,
 				.cyTopHeight = 0,
 				.cyBottomHeight = 0
 			};
-			margins = { -1 };
 			RemoveDefaultCaption(hwnd, &margins);
 			break;
 		}
 		case WM_NCCALCSIZE:
 			if (wParam == 1) {
-				NCCALCSIZE_PARAMS* pncsp = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
-				pncsp->rgrc[0].left = pncsp->rgrc[0].left + 0;
-				pncsp->rgrc[0].top = pncsp->rgrc[0].top + 0;
-				pncsp->rgrc[0].right = pncsp->rgrc[0].right - 0;
-				pncsp->rgrc[0].bottom = pncsp->rgrc[0].bottom - 0;
+				NCCALCSIZE_PARAMS* params = reinterpret_cast<NCCALCSIZE_PARAMS*>(lParam);
+				params->rgrc[0].left = params->rgrc[0].left + 0;
+				params->rgrc[0].top = params->rgrc[0].top + 0;
+				params->rgrc[0].right = params->rgrc[0].right - 0;
+				params->rgrc[0].bottom = params->rgrc[0].bottom - 0;
 				renderer.resizeStart();
 				return 0;
 			}
@@ -170,7 +169,7 @@ LRESULT __stdcall WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 			return 0;
 			[[unlikely]]
 		case WM_CREATE:
-			SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER); // Force post NCCALCSIZE
+			SetWindowPos(hwnd, nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_NOOWNERZORDER);
 			renderer.resizeEnd();
 			break;
 		default:
@@ -179,7 +178,7 @@ LRESULT __stdcall WndProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 	return DefWindowProcW(hwnd, uMsg, wParam, lParam);
 }
 
-LRESULT __stdcall HookProc(int code, WPARAM wParam, LPARAM lParam) {
+LRESULT __stdcall HookProc(const int code, const WPARAM wParam, const LPARAM lParam) {
 	if (code < 0) {
 		Logger.log(L"HookProc nCode < 0");
 		return CallNextHookEx(nullptr, code, wParam, lParam);
@@ -188,10 +187,12 @@ LRESULT __stdcall HookProc(int code, WPARAM wParam, LPARAM lParam) {
 		case WM_LBUTTONUP:
 		case WM_NCLBUTTONUP:
 			PostMessageW(MainWindowHandle, WM_APP_LBUTTONUP, p->wParam, p->lParam);
+			MainLogFile << L"BUTTON-UP\n";
 			return 0;
 		case WM_MBUTTONDOWN:
 		case WM_NCMBUTTONDOWN:
 			PostMessageW(MainWindowHandle, WM_APP_MBUTTONDOWN, p->wParam, p->lParam);
+			MainLogFile << L"BUTTON-DOWN\n";
 			return 0;
 		default:
 			break;
@@ -205,7 +206,7 @@ void gameThread() {
 		using Time = time_point<system_clock>;
 		Time lastTick = system_clock::now();
 		while (isRunning) {
-			Time thisTime = system_clock::now();
+			const Time thisTime = system_clock::now();
 			if (thisTime - lastTick < milliseconds(45)) {
 				Sleep(1);
 				continue;
@@ -228,7 +229,7 @@ void renderThread() {
 		renderer.initialize();
 		Time lastRender = system_clock::now();
 		while (isRunning) {
-			Time thisTime = system_clock::now();
+			const Time thisTime = system_clock::now();
 			if (thisTime - lastRender < milliseconds(12)) {
 				Sleep(1);
 				continue;
@@ -243,7 +244,8 @@ void renderThread() {
 	DestroyWindow(MainWindowHandle);
 }
 
-int __stdcall wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow) {
+int __stdcall wWinMain(const HINSTANCE hInstance, const HINSTANCE, [[maybe_unused]] const LPWSTR lpCmdLine, [[maybe_unused]] const int nShowCmd) {
+	MainLogFile << L"wWinMain started" << std::endl;
 	game.setWindow(StartWindow::create()); // 次序提前至最先
 	for (const auto& [addr, info] : memoryManager.allocated) { Logger.print(L"  using", addr, info.size, L"B", info.msg); }
 	MainLogFile << L"--------Program Start--------" << std::endl;
@@ -257,59 +259,63 @@ int __stdcall wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCm
 	wc.hInstance = hInstance;
 	wc.hIcon = LoadIcon(nullptr, IDI_APPLICATION);
 	wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
-	wc.hbrBackground = (HBRUSH) GetStockObject(BLACK_BRUSH);
+	wc.hbrBackground = static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
 	wc.lpszMenuName = L"None";
 	wc.lpszClassName = ApplicationName.c_str();
 	if (!RegisterClassExW(&wc)) return FALSE;
 	if (!SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE)) Logger.print(L"SetProcessDpiAwarenessContext failed. LastError:", GetLastError());
 	MainInstance = hInstance;
 	MainWindowHandle = CreateWindowExW(0, wc.lpszClassName, wc.lpszClassName, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, hInstance, nullptr);
-	SetWindowLongW(MainWindowHandle, GWL_STYLE, WS_VISIBLE | WS_MAXIMIZEBOX);
-	MARGINS margins{
+	SetWindowLongW(MainWindowHandle, GWL_STYLE, WS_VISIBLE | WS_MAXIMIZEBOX | WS_MAXIMIZE);
+	constexpr MARGINS margins{
 		.cxLeftWidth = 0,
 		.cxRightWidth = 0,
 		.cyTopHeight = 0,
 		.cyBottomHeight = 0
 	};
-	// margins = { -1 };
 	RemoveDefaultCaption(MainWindowHandle, &margins);
-	// DWM_BLURBEHIND blur{
-	// 	.dwFlags = DWM_BB_ENABLE | DWM_BB_BLURREGION | DWM_BB_TRANSITIONONMAXIMIZED,
-	// 	.fEnable = TRUE,
-	// 	.hRgnBlur = CreateRectRgn(0, 0, 400, 400),
-	// 	.fTransitionOnMaximized = FALSE
-	// };
-	// DwmEnableBlurBehindWindow(MainWindowHandle, &blur);
-	// DeleteObject(blur.hRgnBlur);
-	SetWindowLongW(MainWindowHandle, GWL_EXSTYLE, GetWindowLongW(MainWindowHaTndle, GWL_EXSTYLE) | WS_EX_LAYERED);
+	int a = -40;
+	game.tasks.pushNewed(new Task([&a](Task& self) {
+		if (a) {
+			++a;
+			SetLayeredWindowAttributes(MainWindowHandle, 0xffffff, static_cast<BYTE>(0xff * (40 + a) / 40), LWA_COLORKEY | LWA_ALPHA);
+		} else {
+			SetLayeredWindowAttributes(MainWindowHandle, 0xffffff, 0xff, LWA_COLORKEY | LWA_ALPHA);
+			self.schedulePop(true);
+			SetWindowLongW(MainWindowHandle, GWL_EXSTYLE, GetWindowLongW(MainWindowHandle, GWL_EXSTYLE) & ~WS_EX_LAYERED);
+		}
+		return 0;
+	}));
+	SetWindowLongW(MainWindowHandle, GWL_EXSTYLE, GetWindowLongW(MainWindowHandle, GWL_EXSTYLE) | WS_EX_LAYERED);
 	SetLayeredWindowAttributes(MainWindowHandle, 0xffffff, 0xe0, LWA_COLORKEY | LWA_ALPHA);
-	ShowWindow(MainWindowHandle, nCmdShow);
+	ShowWindow(MainWindowHandle, SW_SHOWMAXIMIZED);
+	SetConsoleOutputCP(65001);
+	const HHOOK hook = SetWindowsHookW(WH_GETMESSAGE, HookProc);
+	const HACCEL hAccelTable = LoadAcceleratorsW(hInstance, MAKEINTRESOURCE(109));
+	if (!hook) MainLogFile << L"SetWindowsHookW failed. LastError: " << GetLastError() << std::endl;
+	test();
 	{
 		interactManager.initialize();
+		GameThread = Thread(gameThread);
+		RenderThread = Thread(renderThread);
 	}
-	SetConsoleOutputCP(65001);
-	HHOOK hook = SetWindowsHookW(WH_GETMESSAGE, HookProc);
-	test();
-	HACCEL hAccelTable = LoadAcceleratorsW(hInstance, MAKEINTRESOURCE(109));
 	MSG msg = { nullptr };
-	GameThread = Thread(gameThread);
-	RenderThread = Thread(renderThread);
 	while (GetMessageW(&msg, nullptr, 0, 0)) {
 		if (!TranslateAcceleratorW(msg.hwnd, hAccelTable, &msg)) {
 			TranslateMessage(&msg);
 			DispatchMessageW(&msg);
 		}
 	}
-	isRunning = false;
-	if (GameThread.joinable()) GameThread.join();
-	if (RenderThread.joinable()) RenderThread.join();
+	{
+		isRunning = false;
+		if (GameThread.joinable()) GameThread.join();
+		if (RenderThread.joinable()) RenderThread.join();
+	}
 	DestroyAcceleratorTable(hAccelTable);
 	UnhookWindowsHookEx(hook);
-	_wsystem(L"pause");
 	for (const auto& [addr, info] : memoryManager.allocated) { Logger.print(L"using", addr, info.size, L"B", info.msg); }
 	MainLogFile << L"-------- Program End --------" << std::endl;
 	for (const auto& [addr, info] : memoryManager.allocated) { MainLogFile << L"  using " << addr << L" " << info.size << L"B " << info.msg << std::endl; }
-	_wsystem(L"pause");
 	_wsystem(L"pause");
 	return static_cast<int>(msg.wParam);
 }
@@ -318,9 +324,10 @@ struct Release {
 	Release() = default;
 
 	~Release() {
+		delete &gc;
 		MainLogFile << L"--------- Last Check ---------" << std::endl;
 		for (const auto& [addr, info] : memoryManager.allocated) { MainLogFile << L"  using " << addr << L" " << info.size << L"B " << info.msg << std::endl; }
 		MainLogFile.close();
 		delete &MainLogFile;
 	}
-} x;
+} NEVER_REFERENCED_release;

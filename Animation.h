@@ -30,7 +30,7 @@ private:
 	bool doReverse = true;
 
 public:
-	Animation() noexcept {}
+	Animation() noexcept = default;
 
 	Animation& allowPositiveSuper(const bool val = true) noexcept {
 		positiveSuperAllowed = val;
@@ -42,12 +42,12 @@ public:
 		return *this;
 	}
 
-	Animation& depends(Depend depend) noexcept {
+	Animation& depends(const Depend depend) noexcept {
 		this->depend = depend;
 		return *this;
 	}
 
-	Animation& features(Style style) noexcept {
+	Animation& features(const Style style) noexcept {
 		this->style = style;
 		return *this;
 	}
@@ -62,7 +62,7 @@ public:
 		return *this;
 	}
 
-	Animation& setDuration(const unsigned int val) noexcept {
+	Animation& setDuration(const int val) noexcept {
 		if (duration == 0) duration = 1;
 		duration = val;
 		return *this;
@@ -70,11 +70,11 @@ public:
 
 	void reset() const noexcept { progress = 0; }
 
-	double weight(double x) const noexcept {
+	static double weight(double x) noexcept {
 		if (x <= 0.0) return 0.0;
 		if (x >= 1.0) return 1.0;
 		x *= 2;
-		return x < 1.0 ? pow(x, 5.0) * 0.5 : 1.0 + pow(x - 2.0, 5.0) * 0.5;
+		return x < 1.0 ? pow(x, 5.0) * 0.5 : pow(x - 2.0, 5.0) * 0.5 + 1.0;
 	}
 
 	double calculateNext() const noexcept {

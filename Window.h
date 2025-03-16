@@ -12,7 +12,7 @@
 
 class WindowManager;
 
-enum class MouseActionCode : int {
+enum class MouseActionCode : unsigned int {
 	MAC_MOVE = 0,
 	MAC_HOVER = 1,
 	MAC_DOWN = 2,
@@ -21,7 +21,7 @@ enum class MouseActionCode : int {
 	MAC_LEAVE = 5
 };
 
-enum class MouseButtonCodeEnum : int {
+enum class MouseButtonCodeEnum : unsigned int {
 	MBC_L_DOWN = 0x1,
 	MBC_R_DOWN = 0x2,
 	MBC_M_DOWN = 0x4,
@@ -33,20 +33,20 @@ enum class MouseButtonCodeEnum : int {
 /**
  * @see MouseButtonCodeEnum
  */
-using MouseButtonCode = int;
+using MouseButtonCode = unsigned int;
 
 class Widget : public IRenderable, public ITickable {
 protected:
 	int left = 0, top = 0, width = 0, height = 0;
 
 public:
-	using Action = Function<void(int)>;
+	using Action = Function<void(Widget&, MouseButtonCode)>;
 	double x, y, w, h;
 	Action mouseHover; // 传入int为：0，鼠标移动；其余，鼠标在其上的长时间悬浮
 	Action mouseDown; // 传入int表示变更按键。0左, 1中, 2右
 	Action mouseUp; // 传入int表示变更按键。0左, 1中, 2右
 	Action mouseLeave; // 传入int忽略
-	Action mouseClick; // 传入int表示变更按键。0x0左, 0x1中, 0x2右；0xf表示是否双击
+	Action mouseClick; // 传入int表示变更按键。0x0左, 0x1中, 0x2右；0x8表示是否双击
 	Action onTick; // 传入int忽略
 	Color backgroundColor;
 	Color foregroundColor{ TextColor };
@@ -54,6 +54,7 @@ public:
 protected:
 	mutable bool hasMouse = false;
 	mutable bool isActive = true;
+	mutable bool hasMouseTrigger = false;
 	bool isAbsoluteLocation = false;
 
 public:
@@ -61,10 +62,10 @@ public:
 	Location textLocation = Location::CENTER; // 多余字节预声明备用
 
 protected:
-	char unused[3]{};
+	char unused[2]{};
 
 public:
-	explicit Widget(const double x, const double y, const double w, const double h, const Location location) : x(x), y(y), w(w), h(h), location(location) {}
+	Widget(const double x, const double y, const double w, const double h, const Location location) : x(x), y(y), w(w), h(h), location(location) {}
 
 	unsigned int colorSelector(const Color& clr) const;
 	void render() const noexcept override;
@@ -95,12 +96,25 @@ public:
 	}
 
 	virtual void onResize();
-	virtual void onHover(const int value) noexcept { if (mouseHover) mouseHover(value); }
-	virtual void onMouseDown(const MouseButtonCode code) noexcept { if (mouseDown) mouseDown(code); }
-	virtual void onMouseUp(const MouseButtonCode code) noexcept { if (mouseUp) mouseUp(code); }
-	virtual void onMouseLeave(const int value) noexcept { if (mouseLeave) mouseLeave(value); }
-	virtual void onMouseClick(const int value) noexcept { if (mouseClick) mouseClick(value); }
-	void tick() noexcept override { if (onTick) onTick(0); }
+	virtual void onHover(const int value) noexcept { if (mouseHover) mouseHover(*this, value); }
+
+	virtual void onMouseDown(const MouseButtonCode code) noexcept {
+		hasMouseTrigger = true;
+		if (mouseDown) mouseDown(*this, code);
+	}
+
+	virtual void onMouseUp(const MouseButtonCode code) noexcept {
+		if (mouseUp) mouseUp(*this, code);
+		if (hasMouseTrigger) onMouseClick(code);
+	}
+
+	virtual void onMouseLeave(const MouseButtonCode value) noexcept {
+		hasMouseTrigger = false;
+		if (mouseLeave) mouseLeave(*this, value);
+	}
+
+	virtual void onMouseClick(const MouseButtonCode value) noexcept { if (mouseClick) mouseClick(*this, value); }
+	void tick() noexcept override { if (onTick) onTick(*this, 0); }
 
 	virtual void passEvent(const MouseActionCode action, const MouseButtonCode value, const int x, const int y) noexcept {
 		if (action == MouseActionCode::MAC_LEAVE || !isMouseIn(x, y)) {
@@ -123,7 +137,7 @@ public:
 				onMouseUp(value);
 				break;
 			case MouseActionCode::MAC_DOUBLE:
-				onMouseClick(1);
+				onMouseClick(0x80);
 				break;
 			default:
 				break;
@@ -139,7 +153,7 @@ protected:
 
 	Window() = default;
 
-	~Window() override {}
+	~Window() override = default;
 
 public:
 	int pop() noexcept override;
@@ -164,7 +178,7 @@ public:
 
 class WindowManager final : public AnywhereEditableList<Window, WindowManager>, public IRenderable, public ITickable {
 public:
-	void render() const noexcept override { for (Window& i : *this) i.render(); }
+	void render() const noexcept override { for (const Window& i : *this) i.render(); }
 	void tick() noexcept override { for (Window& i : *this) i.tick(); }
 	int pop(Window* value) noexcept override;
 	void clear() noexcept;
@@ -173,7 +187,7 @@ public:
 
 class CaptionWindow final : public Window {
 public:
-	explicit CaptionWindow();
+	CaptionWindow();
 	bool onOpen() override;
 	void onClose() override;
 	void render() const noexcept override;
@@ -184,10 +198,10 @@ class FloatWindow final : public Window {
 	mutable int x = 0; // 标记渲染起始点
 	mutable int y = 0; // 标记渲染起始点
 	typedef List<ObjectHolder<RenderableString>> lt;
-	SynchronizedHolder<lt> strings{};
+	SynchronizedHolder<lt> strings;
 
 public:
-	explicit FloatWindow() : Window() {
+	FloatWindow() : Window() {
 		strings.setNew<lt>(std::move(lt()));
 		strings.ok();
 		strings.async();
@@ -208,8 +222,8 @@ class Button : public Widget {
 public:
 	ObjectHolder<IText> name;
 	Animation animation = Animation().features(Animation::AS_CUBIC).setDuration(20);
-	explicit Button(const double x, const double y, const double w, const double h, const Location location, const ObjectHolder<IText>& text) : Widget(x, y, w, h, location), name(text) {}
-	explicit Button(const double x, const double y, const double w, const double h, const Location location, ObjectHolder<IText>&& text) : Widget(x, y, w, h, location), name(std::move(text)) {}
+	Button(const double x, const double y, const double w, const double h, const Location location, const ObjectHolder<IText>& text) : Widget(x, y, w, h, location), name(text) {}
+	Button(const double x, const double y, const double w, const double h, const Location location, ObjectHolder<IText>&& text) : Widget(x, y, w, h, location), name(std::move(text)) {}
 	void render() const noexcept override;
 };
 
@@ -222,12 +236,11 @@ public:
 		*cancel = nullptr;
 
 private:
-	explicit ConfirmWindow(const ObjectHolder<IText>& text) : Window(), text(text) {}
-	explicit ConfirmWindow(ObjectHolder<IText>&& text) : Window(), text(std::move(text)) {}
+	ConfirmWindow(const ObjectHolder<IText>& text) : Window(), text(text) {}
+	ConfirmWindow(ObjectHolder<IText>&& text) : Window(), text(std::move(text)) {}
 
 public:
-	~ConfirmWindow() override { /* 不需要delete，析构时Window会自动delete */
-	}
+	~ConfirmWindow() override = default; // 不需要delete，析构时Window会自动delete
 
 	void render() const noexcept override {
 		int w, h;

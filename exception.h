@@ -23,31 +23,39 @@ class NullPointerException final : public Exception {
 	inline static const String type = L"NullPointerException";
 
 public:
-	explicit NullPointerException(String&& msg) : Exception(std::move(msg), &type) {}
-	explicit NullPointerException(const String& msg) : Exception(msg, &type) {}
+	NullPointerException(String&& msg) : Exception(std::move(msg), &type) {}
+	NullPointerException(const String& msg) : Exception(msg, &type) {}
+};
+
+class BadAllocationException final : public Exception {
+	inline static const String type = L"BadAllocationException";
+
+public:
+	BadAllocationException(String&& msg) : Exception(std::move(msg), &type) {}
+	BadAllocationException(const String& msg) : Exception(msg, &type) {}
 };
 
 class ArrayIndexOutOfBoundException final : public Exception {
 	inline static const String type = L"ArrayIndexOutOfBoundException";
 
 public:
-	explicit ArrayIndexOutOfBoundException(String&& msg) : Exception(std::move(msg), &type) {}
-	explicit ArrayIndexOutOfBoundException(const String& msg) : Exception(msg, &type) {}
+	ArrayIndexOutOfBoundException(String&& msg) : Exception(std::move(msg), &type) {}
+	ArrayIndexOutOfBoundException(const String& msg) : Exception(msg, &type) {}
 };
 
 class InvalidOperationException final : public Exception {
 	inline static const String type = L"InvalidOperationException";
 
 public:
-	explicit InvalidOperationException(String&& msg) : Exception(std::move(msg), &type) {}
-	explicit InvalidOperationException(const String& msg) : Exception(msg, &type) {}
+	InvalidOperationException(String&& msg) : Exception(std::move(msg), &type) {}
+	InvalidOperationException(const String& msg) : Exception(msg, &type) {}
 };
 
 class RuntimeException final : public Exception {
 	inline static const String type = L"RuntimeException";
 public:
-	explicit RuntimeException(String&& msg) : Exception(std::move(msg), &type) {}
-	explicit RuntimeException(const String& msg) : Exception(msg, &type) {}
+	RuntimeException(String&& msg) : Exception(std::move(msg), &type) {}
+	RuntimeException(const String& msg) : Exception(msg, &type) {}
 };
 
 
@@ -68,7 +76,7 @@ class PublicLogger final {
 
 public:
 	const String name;
-	explicit PublicLogger(const String& name): name(L" [" + name + L"] ") { std::wcout << L"PublicLogger created\n"; }
+	PublicLogger(const String& name): name(L" [" + name + L"] ") { std::wcout << L"PublicLogger created\n"; }
 
 	PublicLogger& put(const String& msg) noexcept {
 		std::wcout << L"[] [Root]" + name + msg + L"\n";

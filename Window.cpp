@@ -9,14 +9,14 @@
 #include "InteractManager.h"
 
 int Window::pop() noexcept {
-	game.gc.submit(this);
+	gc.submit(this);
 	Success();
 }
 
-void Window::render() const noexcept { for (const ObjectHolder<Widget>& widget : widgets) widget->render(); }
-void Window::tick() noexcept { for (ObjectHolder<Widget>& widget : widgets) widget->tick(); }
-void Window::onResize() { for (ObjectHolder<Widget>& widget : widgets) widget->onResize(); }
-void Window::passEvent(const MouseActionCode action, const MouseButtonCode value, const int x, const int y) noexcept { for (ObjectHolder<Widget>& widget : widgets) widget->passEvent(action, value, x, y); }
+void Window::render() const noexcept { for (const Widget* widget : widgets) widget->render(); }
+void Window::tick() noexcept { for (Widget* widget : widgets) widget->tick(); }
+void Window::onResize() { for (Widget* widget : widgets) widget->onResize(); }
+void Window::passEvent(const MouseActionCode action, const MouseButtonCode value, const int x, const int y) noexcept { for (Widget* widget : widgets) widget->passEvent(action, value, x, y); }
 
 int WindowManager::pop(Window* value) noexcept {
 	if (value->list != static_cast<AnywhereEditableList*>(this)) {
@@ -40,19 +40,20 @@ void WindowManager::clear() noexcept {
 }
 
 CaptionWindow::CaptionWindow() {
-	ObjectHolder<Widget>& close = widgets.emplace_back(Button(0, 0, interactSettings.actual.captionHeight, interactSettings.actual.captionHeight, Location::RIGHT_TOP, LiteralText(L"\\f\2\u2716")));
+	Widget* close = widgets.emplace_back(Button(0, 0, interactSettings.actual.captionHeight, interactSettings.actual.captionHeight, Location::RIGHT_TOP, LiteralText(L"\\f\1\u2716")));
+	close->mouseClick = [](Widget&, MouseButtonCode) { DestroyWindow(MainWindowHandle); };
+	close->onTick = [this](const Widget& self, MouseButtonCode) { if (self.containsMouse()) game.getFloatWindow().push(L"\\#ffee0000关闭窗口"_renderable); };
 	close->absolute();
 	close->backgroundColor.hover = 0xffee0000;
 	close->backgroundColor.active = 0;
 	close->backgroundColor.inactive = 0xffaaaaaa;
 	close->backgroundColor.clicked = 0xffee8888;
-	close->mouseDown = [](int) { DestroyWindow(MainWindowHandle); };
-	close->onTick = [&close, this](int) { if (close->containsMouse()) game.getFloatWindow().push(L"\\#ffee0000关闭窗口"_renderable); };
 	close->foregroundColor.hover = 0xff000000;
 	close->foregroundColor.active = 0xff000000;
 	close->foregroundColor.inactive = 0xff000000;
 	close->foregroundColor.clicked = 0xff000000;
-	ObjectHolder<Widget>& minmax = widgets.emplace_back(Button(-interactSettings.actual.captionHeight, 0, interactSettings.actual.captionHeight, interactSettings.actual.captionHeight, Location::RIGHT_TOP, LiteralText(L"\\f\2🗖")));
+
+	Widget* minmax = widgets.emplace_back(Button(-interactSettings.actual.captionHeight, 0, interactSettings.actual.captionHeight, interactSettings.actual.captionHeight, Location::RIGHT_TOP, LiteralText(L"\\f\1🗖")));
 	minmax->absolute();
 	minmax->backgroundColor.hover = 0xffcccccc;
 	minmax->backgroundColor.active = 0;
@@ -62,7 +63,9 @@ CaptionWindow::CaptionWindow() {
 	minmax->foregroundColor.active = 0xff000000;
 	minmax->foregroundColor.inactive = 0xff000000;
 	minmax->foregroundColor.clicked = 0xff000000;
-	ObjectHolder<Widget>& hide = widgets.emplace_back(Button(-2 * interactSettings.actual.captionHeight, 0, interactSettings.actual.captionHeight, interactSettings.actual.captionHeight, Location::RIGHT_TOP, LiteralText(L"🗕")));
+
+	Widget* hide = widgets.emplace_back(Button(-2 * interactSettings.actual.captionHeight, 0, interactSettings.actual.captionHeight, interactSettings.actual.captionHeight, Location::RIGHT_TOP, LiteralText(L"\\f\1🗕")));
+	hide->mouseClick = [](Widget&, MouseButtonCode) { ShowWindow(MainWindowHandle, SW_MINIMIZE); };
 	hide->absolute();
 	hide->backgroundColor.hover = 0xffcccccc;
 	hide->backgroundColor.active = 0;
@@ -72,7 +75,15 @@ CaptionWindow::CaptionWindow() {
 	hide->foregroundColor.active = 0xff000000;
 	hide->foregroundColor.inactive = 0xff000000;
 	hide->foregroundColor.clicked = 0xff000000;
-	ObjectHolder<Widget>& options = widgets.emplace_back(Button(0, 0, interactSettings.actual.captionHeight, interactSettings.actual.captionHeight, Location::LEFT_TOP, LiteralText(L"\\f\2⛭")));
+
+	Widget* options = widgets.emplace_back(Button(0, 0, interactSettings.actual.captionHeight, interactSettings.actual.captionHeight, Location::LEFT_TOP, LiteralText(L"\\f\1⛭")));
+	options->onTick = [](const Widget& self, MouseButtonCode) {
+		if (self.containsMouse()) {
+			game.getFloatWindow().push(L"\\#ff4488aa设置"_renderable);
+			game.getFloatWindow().push(L"\\.ff4488aa\\#ff000000右键以刷新窗口绘制"_renderable);
+		}
+	};
+	options->mouseClick = [](Widget&, const MouseButtonCode code) { if (static_cast<int>(MouseButtonCodeEnum::MBC_R_DOWN) & code) { game.tasks.pushThis(renderer.resizeReloadBitmap); } };
 	options->absolute();
 	options->backgroundColor.hover = 0xffcccccc;
 	options->backgroundColor.active = 0;
@@ -82,13 +93,6 @@ CaptionWindow::CaptionWindow() {
 	options->foregroundColor.active = 0xff000000;
 	options->foregroundColor.inactive = 0xff000000;
 	options->foregroundColor.clicked = 0xff000000;
-	options->onTick = [options](int) {
-		if (options->containsMouse()) {
-			game.getFloatWindow().push(L"\\#ff4488aa设置"_renderable);
-			game.getFloatWindow().push(L"\\#ff4488aa右键以刷新窗口绘制"_renderable);
-		}
-	};
-	options->mouseDown = [](int code) { if (static_cast<int>(MouseButtonCodeEnum::MBC_R_DOWN) & code) { game.tasks.pushThis(renderer.resizeReloadBitmap); } };
 }
 
 bool CaptionWindow::onOpen() { throw InvalidOperationException(L"Should not open CaptionWindow"); }
@@ -96,12 +100,12 @@ void CaptionWindow::onClose() { throw InvalidOperationException(L"Should not clo
 
 void CaptionWindow::render() const noexcept {
 	renderer.fill(0, 0, renderer.getWidth(), interactSettings.actual.captionHeight, 0xff666666);
-	for (const ObjectHolder<Widget>& widget : widgets) widget->render();
+	for (const Widget* widget : widgets) widget->render();
 }
 
 void CaptionWindow::onResize() {
 	int left = 0, right = 0;
-	for (ObjectHolder<Widget>& widget : widgets) {
+	for (Widget* widget : widgets) {
 		widget->w = interactSettings.actual.captionHeight;
 		widget->h = interactSettings.actual.captionHeight;
 		switch (widget->location) {
@@ -132,7 +136,7 @@ void FloatWindow::render() const noexcept {
 	x = interactManager.getMouseX();
 	y = interactManager.getMouseY();
 	int height = 0, width = 0;
-	for (const ObjectHolder<RenderableString>& str : strings.get()) {
+	for (const RenderableString* str : strings.get()) {
 		height += str->getHeight();
 		if (str->getWidth() > width) width = str->getWidth();
 	}
@@ -147,8 +151,8 @@ void FloatWindow::render() const noexcept {
 	const int xf = x + interactSettings.actual.floatWindowMargin;
 	int yf = y + interactSettings.actual.floatWindowMargin;
 
-	for (const ObjectHolder<RenderableString>& str : strings.get()) {
-		fontManager.get(1).draw(*str, xf, yf);
+	for (const RenderableString* str : strings.get()) {
+		fontManager.getDefault().draw(*str, xf, yf);
 		yf += str->getHeight();
 	}
 
@@ -159,7 +163,7 @@ void FloatWindow::render() const noexcept {
 unsigned int Widget::colorSelector(const Color& clr) const {
 	if (!isActive) return clr.inactive;
 	if (!hasMouse) return clr.active;
-	if (interactManager.getKey(VK_LBUTTON).isPressed() || interactManager.getKey(VK_RBUTTON).isPressed() || interactManager.getKey(VK_MBUTTON).isPressed()) return clr.clicked;
+	if (hasMouseTrigger && (interactManager.getKey(VK_LBUTTON).isPressed() || interactManager.getKey(VK_RBUTTON).isPressed() || interactManager.getKey(VK_MBUTTON).isPressed())) return clr.clicked;
 	return clr.hover;
 }
 
@@ -208,24 +212,24 @@ void Widget::onResize() {
 				break;
 		}
 	} else {
-		width = renderer.getWidth() * w;
-		height = renderer.getHeight() * h;
+		width = static_cast<int>(renderer.getWidth() * w);
+		height = static_cast<int>(renderer.getHeight() * h);
 		switch (location) {
 			case Location::LEFT_TOP:
-				left = renderer.getWidth() * x;
-				top = renderer.getHeight() * y;
+				left = static_cast<int>(renderer.getWidth() * x);
+				top = static_cast<int>(renderer.getHeight() * y);
 				break;
 			case Location::LEFT:
-				left = renderer.getWidth() * x;
+				left = static_cast<int>(renderer.getWidth() * x);
 				top = static_cast<int>(renderer.getHeight() * y) + (renderer.getHeight() - height >> 1);
 				break;
 			case Location::LEFT_BOTTOM:
-				left = renderer.getWidth() * x;
+				left = static_cast<int>(renderer.getWidth() * x);
 				top = static_cast<int>(renderer.getHeight() * y) + renderer.getHeight() - height;
 				break;
 			case Location::TOP:
 				left = static_cast<int>(renderer.getWidth() * x) + (renderer.getWidth() - width >> 1);
-				top = renderer.getHeight() * y;
+				top = static_cast<int>(renderer.getHeight() * y);
 				break;
 			case Location::CENTER:
 				left = static_cast<int>(renderer.getWidth() * x) + (renderer.getWidth() - width >> 1);
@@ -237,7 +241,7 @@ void Widget::onResize() {
 				break;
 			case Location::RIGHT_TOP:
 				left = static_cast<int>(renderer.getWidth() * x) + renderer.getWidth() - width;
-				top = renderer.getHeight() * y;
+				top = static_cast<int>(renderer.getHeight() * y);
 				break;
 			case Location::RIGHT:
 				left = static_cast<int>(renderer.getWidth() * x) + renderer.getWidth() - width;
@@ -277,8 +281,8 @@ ConfirmWindow& ConfirmWindow::requireConfirm(const Function<void(Button&)>& func
 		confirm->w = 0.5;
 		confirm->x = 0;
 	}
-	confirm->onTick = [this](int) { if (confirm->containsMouse()) confirm->backgroundColor.hover = confirm->animation.adaptsColor(0x99008800, 0x9900ff00); };
-	confirm->mouseLeave = [this](int) { confirm->animation.reset(); };
+	confirm->onTick = [](Widget& confirm, MouseButtonCode) { if (confirm.containsMouse()) confirm.backgroundColor.hover = static_cast<Button&>(confirm).animation.adaptsColor(0x99008800, 0x9900ff00); };
+	confirm->mouseLeave = [](Widget& confirm, MouseButtonCode) { static_cast<Button&>(confirm).animation.reset(); };
 	if (func) func(*confirm);
 	confirm->onResize();
 	return *this;
@@ -286,7 +290,7 @@ ConfirmWindow& ConfirmWindow::requireConfirm(const Function<void(Button&)>& func
 
 ConfirmWindow& ConfirmWindow::requireCancel(const Function<void(Button&)>& func) {
 	cancel = dynamic_cast<Button*>(widgets.emplace_back(std::move(Button(0, 0.1, 0.4, 0.08, Location::CENTER, LiteralText(L"Cancel")))).ptr());
-	cancel->mouseUp = [this](int) {
+	cancel->mouseClick = [this](Widget&, MouseButtonCode) {
 		game.tasks.pushNewed(allocatedFor(new Task([this](Task& self) {
 			if (game.closeWindow(this)) this->onClose();
 			self.pop();
@@ -311,8 +315,8 @@ ConfirmWindow& ConfirmWindow::requireCancel(const Function<void(Button&)>& func)
 		cancel->x = 0.125;
 		cancel->w = 0.5;
 	}
-	cancel->onTick = [this](int) { if (cancel->containsMouse()) cancel->backgroundColor.hover = cancel->animation.adaptsColor(0x99880000, 0x99ff0000); };
-	cancel->mouseLeave = [this](int) { cancel->animation.reset(); };
+	cancel->onTick = [](Widget& cancel, MouseButtonCode) { if (cancel.containsMouse()) cancel.backgroundColor.hover = static_cast<Button&>(cancel).animation.adaptsColor(0x99880000, 0x99ff0000); };
+	cancel->mouseLeave = [](Widget& cancel, int) { static_cast<Button&>(cancel).animation.reset(); };
 	if (func) func(*cancel);
 	cancel->onResize();
 	return *this;

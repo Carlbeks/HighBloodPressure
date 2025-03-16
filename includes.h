@@ -4,15 +4,17 @@
 
 #pragma once
 
+#include "warnings.h"
+
 #include "def.h"
+#include "File.h"
 #include "exception.h"
+#include "gc.h"
 #include "utils.h"
 #include "hbp.h"
 #include "Chars.h"
-#include "gc.h"
 #include "Task.h"
 
-#include "File.h"
 #include "Renderer.h"
 #include "Animation.h"
 #include "InteractManager.h"

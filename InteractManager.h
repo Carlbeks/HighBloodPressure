@@ -62,7 +62,7 @@ class InteractManager {
 
 public:
 	void initialize() noexcept { trackMouseEvent.hwndTrack = MainWindowHandle; }
-	explicit InteractManager();
+	InteractManager();
 
 	void update(const int keyCode, const bool isPressed) noexcept {
 		if (keyCode >= 256) return;
@@ -100,7 +100,7 @@ public:
 	[[nodiscard]] bool isInClientCaption() const noexcept;
 	[[nodiscard]] KeyStatus& getKey(const int keyCode) noexcept { return keyStatus[keyCode]; }
 	[[nodiscard]] KeyStatus& getKey(const KeyBinding& binding) noexcept;
-	[[nodiscard]] int getMouseButtonCode() const noexcept;
+	[[nodiscard]] unsigned int /*MouseButtonCode*/ getMouseButtonCode() const noexcept;
 
 	int dealMouseWheel() noexcept {
 		const int ret = mouseWheel;

@@ -73,8 +73,8 @@ class Renderer final : public ITickable {
 
 public:
 	byte windowSize = 0; // 1, Windows: SIZE_***
-	byte reserved[5] {};
-	Task resizeReloadBitmap { [this](Task& task) {
+	byte reserved[5]{};
+	Task resizeReloadBitmap{ [this](Task& task) {
 		Logger.info(L"Scheduled task: resize reload bitmap " + std::to_wstring(windowWidth) + L" * " + std::to_wstring(windowHeight));
 		if (!canvasBitmap) {
 			canvasBitmap = CreateCompatibleBitmap(MainDC, windowWidth, windowHeight);
@@ -86,7 +86,7 @@ public:
 		}
 		if (canvasBitmap && assistBitmap) {
 			task.pop();
-			Logger.info(L"Successfully reload bitmap " + ptrtow(reinterpret_cast<QWORD>(static_cast<void*>(canvasBitmap))) + L" " + ptrtow(reinterpret_cast<QWORD>(static_cast<void*>(assistBitmap))));
+			Logger.info(L"Successfully reload bitmap " + ptrtow(reinterpret_cast<QWORD>(canvasBitmap)) + L" " + ptrtow(reinterpret_cast<QWORD>(assistBitmap)));
 			this->resizeEnd();
 		}
 		Logger.print(task.reserved[0]);
@@ -94,11 +94,10 @@ public:
 
 private:
 	void gameStartRender() noexcept;
-
 	void gameEndRender() noexcept;
 
 public:
-	explicit Renderer() { Logger.put(L"Renderer created"); }
+	Renderer() { Logger.put(L"Renderer created"); }
 
 	~Renderer() override {
 		Logger.put(L"Renderer destroyed");
@@ -128,7 +127,7 @@ public:
 	 * @param argb ARGB式颜色
 	 * @return int BGR式颜色
 	 */
-	[[nodiscard]] static unsigned int changeColorFormat(const unsigned int argb) { return ((argb << 16) & 0xff0000) | (argb & 0xff00) | ((argb >> 16) & 0xff); }
+	[[nodiscard]] static unsigned int changeColorFormat(const unsigned int argb) { return argb << 16 & 0xff0000 | argb & 0xff00 | argb >> 16 & 0xff; }
 
 	void assertRendering() const noexcept(false) { if (!isRendering) throw InvalidOperationException(L"Operation should be done while rendering"); }
 
@@ -167,7 +166,7 @@ public:
 				.right = x + w,
 				.bottom = y + h
 			};
-			HBRUSH clr = CreateSolidBrush(changeColorFormat(color));
+			const HBRUSH clr = CreateSolidBrush(changeColorFormat(color));
 			FillRect(canvasDC, &rect, clr);
 			deleteObject(clr);
 		} else {
@@ -178,7 +177,7 @@ public:
 				.bottom = y + h > windowHeight ? windowHeight - y : h
 			};
 			blendFunction.SourceConstantAlpha = color >> 24;
-			HBRUSH clr = CreateSolidBrush(changeColorFormat(color));
+			const HBRUSH clr = CreateSolidBrush(changeColorFormat(color));
 			FillRect(assistDC, &rect, clr);
 			deleteObject(clr);
 			if (!AlphaBlend(canvasDC, x, y, rect.right, rect.bottom, assistDC, 0, 0, rect.right, rect.bottom, blendFunction)) Logger.error(L"AlphaBlend failed");
@@ -189,8 +188,7 @@ public:
 		assertRendering();
 		//assertRenderThread();
 		if ((color & 0xff000000) == 0) return;
-		if ((color & 0xff000000) == 0xff000000) {
-			HBRUSH clr = CreateSolidBrush(changeColorFormat(color));
+		if ((color & 0xff000000) == 0xff000000) { const HBRUSH clr = CreateSolidBrush(changeColorFormat(color));
 			FillRect(canvasDC, rect, clr);
 			deleteObject(clr);
 		} else {
@@ -201,7 +199,7 @@ public:
 				.bottom = rect->bottom > windowHeight ? windowHeight : rect->bottom - rect->top
 			};
 			blendFunction.SourceConstantAlpha = color >> 24;
-			HBRUSH clr = CreateSolidBrush(changeColorFormat(color));
+			const HBRUSH clr = CreateSolidBrush(changeColorFormat(color));
 			FillRect(assistDC, &r, clr);
 			deleteObject(clr);
 			if (!AlphaBlend(canvasDC, rect->left, rect->top, r.right, r.bottom, assistDC, 0, 0, r.right, r.bottom, blendFunction)) Logger.error(L"AlphaBlend failed");

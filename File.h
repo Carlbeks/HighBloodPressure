@@ -4,17 +4,88 @@
 
 #pragma once
 
-
 class File {
 public:
-	std::wfstream file;
-	explicit File(const std::wstring& path) : file(path, std::ios::in | std::ios::out | std::ios::binary) {}
+	String path{};
+	std::wfstream file{};
+	int flags = std::ios::in | std::ios::out | std::ios::binary;
+
+	File(const String& path) : path(path) {}
+	File(const File&) = delete;
+	File(File&&) = delete;
 	~File() { if (file.is_open()) file.close(); }
+	File& operator=(const File&) = delete;
+	File& operator=(File&&) = delete;
+
+	File& open() {
+		if (file.is_open()) file.close();
+		file.open(path, flags);
+		return *this;
+	}
+
+	File& close() {
+		if (file.is_open()) file.close();
+		return *this;
+	}
+
+	File& clearContent() {
+		file.clear();
+		if (file.is_open()) file.close();
+		file.open(path, flags | std::ios::trunc);
+		return *this;
+	}
+
+	File& inputs(const bool value = true) {
+		if (value) flags |= std::ios::in;
+		else flags &= ~std::ios::in;
+		return *this;
+	}
+
+	File& outputs(const bool value = true) {
+		if (value) flags |= std::ios::out;
+		else flags &= ~std::ios::out;
+		return *this;
+	}
+
+	File& binary(const bool value = true) {
+		if (value) flags |= std::ios::binary;
+		else flags &= ~std::ios::binary;
+		return *this;
+	}
+
+	File& append(const bool value = true) {
+		if (value) flags |= std::ios::app;
+		else flags &= ~std::ios::app;
+		return *this;
+	}
+
+	File& truncate(const bool value = true) {
+		if (value) flags |= std::ios::trunc;
+		else flags &= ~std::ios::trunc;
+		return *this;
+	}
+
+	template <typename T>
+	File& operator<<(T&& value) {
+		if (file.is_open()) file << std::forward<T>(value);
+		return *this;
+	}
+
+	File& operator<<(decltype(std::endl<wchar, std::char_traits<wchar>>) value) {
+		if (file.is_open()) file << value;
+		return *this;
+	}
+
+	template <typename T>
+	File& operator>>(T&& value) {
+		if (file.is_open()) file >> std::forward<T>(value);
+		return *this;
+	}
 };
 
 class Data {
 public:
-	enum class DataType : int {
+	enum class DataType : unsigned char {
 		Integer, Double, String, Boolean, Null, List, Object
 	};
 
@@ -34,18 +105,16 @@ class DataLoader {
 		while (!file.file.eof()) {
 			wchar c = file.file.get();
 			if (c == L'\"') Success();
-			if (c == L'\\') {
-				c = file.file.get();
-			}
+			if (c == L'\\') { c = file.file.get(); }
 		}
-		errorInfo =	L"Error: String never ends. EOF comes before a '\"'";
+		errorInfo = L"Error: String never ends. EOF comes before a '\"'";
 		Failed();
 	}
 
 	int loadUntil(int& line, wchar at = 0) {
 		String name = {};
 		String val = {};
-		enum { identifier, eq, value, end } status = identifier;
+		enum : unsigned char { identifier, eq, value, end } status = identifier;
 		while (!file.file.eof()) {
 			const wchar c = file.file.get();
 			if (c == L'\n') ++line;
@@ -72,12 +141,17 @@ class DataLoader {
 
 public:
 	String errorInfo = {};
-	explicit DataLoader(const String& path) : file(path) {}
+	DataLoader(const String& path) : file(path) {}
 	DataLoader(const DataLoader&) = delete;
 	DataLoader(DataLoader&&) = delete;
+	DataLoader& operator=(const DataLoader&) = delete;
+	DataLoader& operator=(DataLoader&&) = delete;
+	~DataLoader() = default;
 
 	int load() {
 		int line = 1;
 		return loadUntil(line);
 	}
 };
+
+inline File& [[carlbeks::releasedat]] MainLogFile = (new File(L"log.txt"))->binary().inputs().outputs().truncate().open().operator<<(L"initialize MainLogFile\n");

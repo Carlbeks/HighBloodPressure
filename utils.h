@@ -1,7 +1,10 @@
 //
 // Created by EmsiaetKadosh on 25-3-4.
 //
+
 #pragma once
+
+#include "gc.h"
 
 template <typename T, typename L = void>
 class AnywhereEditable;
@@ -10,6 +13,7 @@ class AnywhereEditableList;
 template <typename T, typename L = void>
 class AnywhereIterator;
 class AnywhereIteratorEnd;
+
 
 /**
  * 此处无法进行代码编译层面的直接约束
@@ -33,9 +37,8 @@ private:
 public:
 	byte reserved[7]{}; // reserved[0]: Task::schedulePop
 
-public:
 	AnywhereEditable() = default;
-	AnywhereEditable(const AnywhereEditable& other) {}
+	AnywhereEditable(const AnywhereEditable&) {}
 
 	AnywhereEditable(AnywhereEditable&& other) noexcept : prev(other->prev), next(other->next), list(other->list) {
 		other->prev = nullptr;
@@ -65,7 +68,7 @@ class AnywhereIterator {
 	AnywhereEditable<T, L>* current;
 
 public:
-	explicit AnywhereIterator(AnywhereEditable<T, L>* current) : current(current) {}
+	AnywhereIterator(AnywhereEditable<T, L>* current) : current(current) {}
 	AnywhereIterator(const AnywhereIterator& other) = default;
 
 	T& operator*() noexcept(false) {
@@ -116,7 +119,7 @@ public:
 
 class AnywhereIteratorEnd {
 public:
-	AnywhereIteratorEnd() {}
+	AnywhereIteratorEnd() = default;
 	AnywhereIteratorEnd(const AnywhereIteratorEnd& other) = delete;
 	AnywhereIteratorEnd(AnywhereIteratorEnd&& other) = delete;
 
@@ -160,7 +163,13 @@ template <typename T, typename L>
 int AnywhereEditable<T, L>::pushThis(AnywhereEditableList<T, L>& list) noexcept { return list.pushThis(static_cast<T*>(this)); }
 
 template <typename T, typename L>
-int AnywhereEditable<T, L>::pop() noexcept { return list->pop(static_cast<T*>(this)); }
+int AnywhereEditable<T, L>::pop() noexcept {
+	if (!list) {
+		Logger.error(L"AnywhereEditable::pop() : list is null");
+		Failed();
+	}
+	return list->pop(static_cast<T*>(this));
+}
 
 template <typename T, typename L>
 bool AnywhereIterator<T, L>::operator!=(const AnywhereIteratorEnd& other) const noexcept { return other != *this; }
@@ -205,6 +214,6 @@ int AnywhereEditableList<T, L>::pop(T* value) noexcept {
 	value->list = nullptr;
 	value->next->prev = value->prev;
 	value->prev->next = value->next;
-	if (value->managedByList) delete deallocating(value);
+	if (value->managedByList) gc.submit(value);
 	Success();
 }

@@ -4,7 +4,9 @@
 
 #pragma once
 
+#include "warnings.h"
 #include "def.h"
+#include "File.h"
 
 struct IGarbage;
 template <typename T>
@@ -18,7 +20,7 @@ private:
 
 protected:
 	void* ptr;
-	explicit IGarbage(void* ptr) : ptr(ptr) {}
+	IGarbage(void* ptr) : ptr(ptr) {}
 	virtual ~IGarbage() = default;
 	virtual void collect() = 0;
 	virtual void deleteThis() = 0;
@@ -29,7 +31,7 @@ class Garbage final : public IGarbage {
 	friend class GarbageCollector;
 
 public:
-	explicit Garbage(T* ptr) : IGarbage(ptr) {}
+	Garbage(T* ptr) : IGarbage(ptr) {}
 	void collect() override { delete static_cast<T*>(deallocating(ptr)); }
 
 protected:
@@ -44,14 +46,14 @@ class GarbageCollector {
 	IGarbage* processing = nullptr;
 
 public:
-	GarbageCollector() = default;
+	GarbageCollector() { MainLogFile << L"initialize GarbageCollector" << std::endl; }
 	GarbageCollector(const GarbageCollector&) = delete;
 	GarbageCollector(GarbageCollector&&) = delete;
 	GarbageCollector& operator=(const GarbageCollector&) = delete;
 	GarbageCollector& operator=(GarbageCollector&&) = delete;
 
 	~GarbageCollector() {
-		IGarbage* iter = processing;
+		IGarbage* iter;
 		while (processing) {
 			iter = processing->next;
 			processing->collect();
@@ -76,17 +78,21 @@ public:
 	/** 只能在gameThread调用 */
 	template <TypeName T>
 	void submit(T* ptr) noexcept(false) {
-		IGarbage* garbage = allocatedFor(new Garbage<T>(ptr));
+		IGarbage* newedGarbage = allocatedFor(new Garbage<T>(ptr));
+		builtinSubmit(newedGarbage);
+	}
+
+	void builtinSubmit(IGarbage* const newedGarbage) noexcept(false) {
 		if (IGarbage* end = submittedEnd) { // 后续添加，可能存在线程竞争
 			while (end->next) end = end->next; // 理论上不会进入循环，但防止万一
-			end->next = garbage;
-			if (submitted) submittedEnd = garbage; // 参考pack()，submitted会被先置空
+			end->next = newedGarbage;
+			if (submitted) submittedEnd = newedGarbage; // 参考pack()，submitted会被先置空
 			std::atomic_thread_fence(std::memory_order_acquire);
 			if (!submitted) submittedEnd = nullptr; // 防止submittedEnd = garbage在pack()中置空后进行。此函数是同步的，所以可以这样操作。
 		}
 		else { // 添加首个，一定不会有线程竞争；或先前的已经pack
-			submitted = garbage;
-			submittedEnd = garbage;
+			submitted = newedGarbage;
+			submittedEnd = newedGarbage;
 		}
 	}
 
@@ -115,7 +121,7 @@ public:
 
 	/** 只能在gameThread调用 */
 	void collect() {
-		IGarbage* next = processing;
+		IGarbage* next;
 		while (processing) {
 			next = processing->next;
 			processing->next = nullptr;
@@ -140,3 +146,5 @@ public:
 		}
 	}
 };
+
+inline GarbageCollector& [[carlbeks::releasedat("main.cpp")]] gc = *new GarbageCollector();

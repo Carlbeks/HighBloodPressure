@@ -6,6 +6,7 @@
 
 #include "Chars.h"
 #include "exception.h"
+#include "Game.h"
 
 template<TypeName Base> template<NewCopyable T> requires std::is_base_of_v<Base, T> && TypeName<T>
 void ObjectHolder<Base>::set(const T& value) {
@@ -26,8 +27,9 @@ void ObjectHolder<Base>::set(T&& value) {
 }
 
 void requireNonnull(const void* value) noexcept(false) { if (!value) throw NullPointerException(L"value is null"); }
+void checkAllocation(const void* value) noexcept(false) { if (!value) throw BadAllocationException(L"bad allocation"); }
 
-void printAllocate(void* value, size_t size, const String& msg) {
+void printAllocate(void* value, const size_t size, const String& msg) {
 	const String str = L"alloc   " + ptrtow(reinterpret_cast<QWORD>(value)) + L" " + std::to_wstring(size) + String(L"B ") + msg;
 	Logger.log(str);
 #if __CARLBEKS_MEMORY__ > 2
@@ -35,7 +37,7 @@ void printAllocate(void* value, size_t size, const String& msg) {
 #endif
 }
 
-void printDeallocate(void* value, size_t size, const String& msg) {
+void printDeallocate(void* value, const size_t size, const String& msg) {
 	const String str = L"dealloc " + ptrtow(reinterpret_cast<QWORD>(value)) + L" " + std::to_wstring(size) + String(L"B ") + msg;
 	Logger.log(str);
 #if __CARLBEKS_MEMORY__ > 2

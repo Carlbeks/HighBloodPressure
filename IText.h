@@ -3,10 +3,11 @@
 //
 
 #pragma once
+
 #include <ranges>
 
-#include "Chars.h"
 #include "def.h"
+#include "Chars.h"
 #include "InteractManager.h"
 
 class LiteralText;
@@ -37,7 +38,7 @@ class RenderableString {
 		FontStyle style = 0;
 		FontID idFont = 0;
 
-		explicit StringConfig() = default;
+		StringConfig() = default;
 
 		void reset() noexcept {
 			idFont = 0;
@@ -109,10 +110,10 @@ class RenderableString {
 	using ConstIterator = List<StringConfig>::const_iterator;
 
 public:
-	explicit RenderableString(const String& string): RenderableString(string.c_str(), string.length()) {}
-	explicit RenderableString(String&& string) : RenderableString(string.c_str(), string.length()) {}
+	RenderableString(const String& string): RenderableString(string.c_str(), string.length()) {}
+	RenderableString(String&& string) : RenderableString(string.c_str(), string.length()) {}
 
-	explicit RenderableString(const wchar* const string, const QWORD length = static_cast<QWORD>(-1)) {
+	RenderableString(const wchar* const string, const QWORD length = static_cast<QWORD>(-1)) {
 		if (length == -1) parseAppend(string);
 		else parseAppend(string, length);
 	}
@@ -171,8 +172,8 @@ public:
 		return *this;
 	}
 
-	int getHeight() const noexcept;
-	int getWidth(FontID defaultID = 1) const noexcept;
+	[[nodiscard]] int getHeight() const noexcept;
+	[[nodiscard]] int getWidth(FontID defaultID = 0) const noexcept;
 	int getWidth(RenderConfig* renderConfigs, FontID defaultID) const noexcept;
 
 private:
@@ -353,14 +354,13 @@ private:
 	}
 };
 
-inline RenderableString operator""_renderable(const wchar* const text, const QWORD len) noexcept { return RenderableString(text); }
+inline RenderableString operator""_renderable(const wchar* const text, const QWORD) noexcept { return RenderableString(text); }
 
 class Font {
 public:
 	Function<void(int width, int height)> resize;
 
 private:
-	friend class ObjectHolder<Font>;
 	friend class FontManager;
 	friend class RenderableString;
 	const String name;
@@ -374,9 +374,9 @@ private:
 	const FontID id;
 	bool adaptAllSize = false;
 
-	explicit Font(const FontID id, const String& name, const double heightModifier, const double yOffset, const long escapement, const long orientation, const bool adaptAllSize) : name{ name }, yOffset(yOffset), heightModifier(heightModifier), height(interactSettings.actual.fontHeight * heightModifier), escapement(escapement), orientation(orientation), yOffsetPx(yOffset * height), id(id), adaptAllSize(adaptAllSize) {}
+	Font(const FontID id, const String& name, const double heightModifier, const double yOffset, const long escapement, const long orientation, const bool adaptAllSize) : name{ name }, yOffset(yOffset), heightModifier(heightModifier), height(static_cast<long>(interactSettings.actual.fontHeight * heightModifier)), escapement(escapement), orientation(orientation), yOffsetPx(static_cast<long>(yOffset * height)), id(id), adaptAllSize(adaptAllSize) {}
 
-	explicit Font(const FontID id, String&& name, const double heightModifier, const double yOffset, const long escapement, const long orientation, const bool adaptAllSize) : name{ std::move(name) }, yOffset(yOffset), heightModifier(heightModifier), height(interactSettings.actual.fontHeight * heightModifier), escapement(escapement), orientation(orientation), yOffsetPx(yOffset * height), id(id), adaptAllSize(adaptAllSize) {}
+	Font(const FontID id, String&& name, const double heightModifier, const double yOffset, const long escapement, const long orientation, const bool adaptAllSize) : name{ std::move(name) }, yOffset(yOffset), heightModifier(heightModifier), height(static_cast<long>(interactSettings.actual.fontHeight * heightModifier)), escapement(escapement), orientation(orientation), yOffsetPx(static_cast<long>(yOffset * height)), id(id), adaptAllSize(adaptAllSize) {}
 
 public:
 	Font(const Font&) = default;
@@ -427,11 +427,11 @@ public:
 class FontManager {
 	Map<FontID, Font> fonts;
 	Font *defaultFont, *captionFont;
-	FontID assigned = 1;
+	FontID assigned = 0;
 	using IterFonts = Map<FontID, Font>::const_iterator;
 
 public:
-	explicit FontManager() {
+	FontManager() {
 		captionFont = &newFont(L"Microsoft YaHei UI Light");
 		defaultFont = &newFont(L"Microsoft YaHei UI Light");
 		captionFont->height = interactSettings.actual.captionHeight >> 1;
@@ -463,14 +463,14 @@ public:
 		return fonts.emplace(assigned, std::move(Font(assigned, std::move(name), heightModifier, yOffset, adaptAllSize, escapement, orientation))).first->second;
 	}
 
-	Font& getDefault() const noexcept { return *defaultFont; }
+	[[nodiscard]] Font& getDefault() const noexcept { return *defaultFont; }
 
 	void resize(const int width, const int height) {
 		for (auto& font : fonts | std::views::values)
 			if (font.resize) font.resize(width, height);
 			else {
-				font.height = interactSettings.actual.fontHeight * font.heightModifier;
-				font.yOffsetPx = font.height * font.yOffset;
+				font.height = static_cast<long>(interactSettings.actual.fontHeight * font.heightModifier);
+				font.yOffsetPx = static_cast<long>(font.height * font.yOffset);
 				font.clear();
 			}
 	}
@@ -487,8 +487,8 @@ typedef class LiteralText final : public IText {
 	mutable RenderableString renderableString;
 
 public:
-	explicit LiteralText(const String& string): string(string), renderableString(string) {}
-	explicit LiteralText(String&& string): string(std::move(string)), renderableString(this->string) {}
+	LiteralText(const String& string): string(string), renderableString(string) {}
+	LiteralText(String&& string): string(std::move(string)), renderableString(this->string) {}
 
 	const String& getText() const noexcept override { return string; }
 
@@ -501,8 +501,8 @@ class TranslatableText final : public IText {
 	mutable QWORD langConfig = 0;
 
 public:
-	explicit TranslatableText(const String& id) : idSrc(id) {}
-	explicit TranslatableText(String&& id) : idSrc(std::move(id)) {}
+	TranslatableText(const String& id) : idSrc(id) {}
+	TranslatableText(String&& id) : idSrc(std::move(id)) {}
 	const String& getText() const noexcept override;
 	const RenderableString& getRenderableString() const noexcept override;
 	void refreshText() const noexcept;
@@ -524,7 +524,7 @@ class Translator {
 	using IterLang = List<Language>::const_iterator;
 
 public:
-	explicit Translator() { langMap.insert(std::make_pair(String(L"zh-cn"), 1)); }
+	Translator() { langMap.insert(std::make_pair(String(L"zh-cn"), 1)); }
 	void addLang(const String& lang) noexcept { langMap.insert(std::make_pair(lang, ++idLangMax)); }
 	void addLang(String&& lang) noexcept { langMap.insert(std::make_pair(lang, ++idLangMax)); }
 	void loadLang();

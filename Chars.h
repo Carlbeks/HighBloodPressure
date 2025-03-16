@@ -57,18 +57,18 @@ static constexpr wchar Table16[17] = L"0123456789ABCDEF";
 	String ret;
 	if (fills >= 8 || value < static_cast<unsigned int>(1) << fills * 4) {
 		ret.assign(fills, L'0');
-		for (unsigned int i = fills - 1; i != 0 && value; --i) {
+		for (unsigned int i = fills - 1; i && value; --i) {
 			ret[i] = Table16[value & 0xf];
 			value >>= 4;
 		}
 	} else {
 		unsigned int i = 0;
 		while (i < 8) {
-			if ((value >> i) & 0xf) break;
+			if (value >> i & 0xf) break;
 			++i;
 		}
 		while (i < 8) {
-			ret.push_back(Table16[(value >> i) & 0xf]);
+			ret.push_back(Table16[value >> i & 0xf]);
 			++i;
 		}
 		if (ret.empty()) ret = L"0";
@@ -86,18 +86,18 @@ static constexpr wchar Table16[17] = L"0123456789ABCDEF";
 	String ret;
 	if (fills >= 16 || value < static_cast<QWORD>(1) << fills * 4) {
 		ret.assign(fills, L'0');
-		for (QWORD i = fills - 1; i != 0 && value; --i) {
+		for (QWORD i = fills - 1; i && value; --i) {
 			ret[i] = Table16[value & 0xf];
 			value >>= 4;
 		}
 	} else {
 		QWORD i = 0;
 		while (i < 16) {
-			if ((value >> i) & 0xf) break;
+			if (value >> i & 0xf) break;
 			++i;
 		}
 		while (i < 16) {
-			ret.push_back(Table16[(value >> i) & 0xf]);
+			ret.push_back(Table16[value >> i & 0xf]);
 			++i;
 		}
 		if (ret.empty()) ret = L"0";

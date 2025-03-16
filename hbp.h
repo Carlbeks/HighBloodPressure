@@ -12,14 +12,14 @@ inline BOOL NewProcess(const String& cmdline) noexcept {
 	return CreateProcessW(nullptr, const_cast<wchar*>(cmdline.c_str()), nullptr, nullptr, 0, 0, nullptr, nullptr, &si, &pi);
 }
 
-inline HRESULT RemoveDefaultCaption(HWND hWnd, const MARGINS* p) noexcept { return DwmExtendFrameIntoClientArea(hWnd, p); }
+inline HRESULT RemoveDefaultCaption(const HWND hWnd, const MARGINS* p) noexcept { return DwmExtendFrameIntoClientArea(hWnd, p); }
 
 inline bool ShowConsoleIO() noexcept {
 	AllocConsole();
 	FILE* pCout;
 	freopen_s(&pCout, "CONOUT$", "w", stdout);
 	FILE* pCin;
-	freopen_s(&pCin, "CONIN$", "r", stdin);
+	freopen_s(&pCin, "CONOUT$", "r+", stdin);
 	return true;
 }
 
