@@ -127,5 +127,13 @@ void TranslatableText::refreshText() const noexcept {
 	}
 }
 
+void languageMakeChinese(Language& lang) {
+	Logger.debug(L"languageMakeChinese called");
+	Map<std::wstring, LiteralText>& map = lang.translateTable;
+	map.emplace(String(L"hbp.title"), TranslatedText(L"高血压"));
+	map.emplace(String(L"hbp.confirm.confirm"), TranslatedText(L"确认"));
+	map.emplace(String(L"hbp.confirm.cancel"), TranslatedText(L"取消"));
+}
+
 inline Translator translator = Translator();
 inline FontManager fontManager = FontManager();

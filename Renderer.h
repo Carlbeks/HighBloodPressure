@@ -89,7 +89,6 @@ public:
 			Logger.info(L"Successfully reload bitmap " + ptrtow(reinterpret_cast<QWORD>(canvasBitmap)) + L" " + ptrtow(reinterpret_cast<QWORD>(assistBitmap)));
 			this->resizeEnd();
 		}
-		Logger.print(task.reserved[0]);
 	} };
 
 private:

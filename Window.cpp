@@ -16,7 +16,12 @@ int Window::pop() noexcept {
 void Window::render() const noexcept { for (const Widget* widget : widgets) widget->render(); }
 void Window::tick() noexcept { for (Widget* widget : widgets) widget->tick(); }
 void Window::onResize() { for (Widget* widget : widgets) widget->onResize(); }
-void Window::passEvent(const MouseActionCode action, const MouseButtonCode value, const int x, const int y) noexcept { for (Widget* widget : widgets) widget->passEvent(action, value, x, y); }
+
+int Window::passEvent(const MouseActionCode action, const MouseButtonCode value, const int x, const int y) noexcept {
+	int ret = 0;
+	for (Widget* widget : widgets) ret |= widget->passEvent(action, value, x, y);
+	return ret;
+}
 
 int WindowManager::pop(Window* value) noexcept {
 	if (value->list != static_cast<AnywhereEditableList*>(this)) {
@@ -53,16 +58,23 @@ CaptionWindow::CaptionWindow() {
 	close->foregroundColor.inactive = 0xff000000;
 	close->foregroundColor.clicked = 0xff000000;
 
-	Widget* minmax = widgets.emplace_back(Button(-interactSettings.actual.captionHeight, 0, interactSettings.actual.captionHeight, interactSettings.actual.captionHeight, Location::RIGHT_TOP, LiteralText(L"\\f\1🗖")));
-	minmax->absolute();
-	minmax->backgroundColor.hover = 0xffcccccc;
-	minmax->backgroundColor.active = 0;
-	minmax->backgroundColor.inactive = 0xff555555;
-	minmax->backgroundColor.clicked = 0xffaaaaaa;
-	minmax->foregroundColor.hover = 0xff000000;
-	minmax->foregroundColor.active = 0xff000000;
-	minmax->foregroundColor.inactive = 0xff000000;
-	minmax->foregroundColor.clicked = 0xff000000;
+	Widget* maxRestore = widgets.emplace_back(Button(-interactSettings.actual.captionHeight, 0, interactSettings.actual.captionHeight, interactSettings.actual.captionHeight, Location::RIGHT_TOP, LiteralText(IsZoomed(MainWindowHandle) ? L"\\f\1🗗" : L"\\f\1🗖" )));
+	maxRestore->mouseClick = [](Widget&, MouseButtonCode) {};
+	maxRestore->mouseClick = [](Widget& self, MouseButtonCode) {
+		if ((self.unused[1] = IsZoomed(MainWindowHandle))) ShowWindow(MainWindowHandle, SW_RESTORE);
+		else ShowWindow(MainWindowHandle, SW_MAXIMIZE);
+	};
+	maxRestore->onTick = [this](const Widget& self, MouseButtonCode) { if (self.containsMouse()) game.getFloatWindow().push(self.unused[1] ? L"\\#ff4488ee复原窗口"_renderable : L"\\#ff4488ee最大化窗口"_renderable); };
+	maxRestore->absolute();
+	maxRestore->unused[1] = IsZoomed(MainWindowHandle);
+	maxRestore->backgroundColor.hover = 0xffcccccc;
+	maxRestore->backgroundColor.active = 0;
+	maxRestore->backgroundColor.inactive = 0xff555555;
+	maxRestore->backgroundColor.clicked = 0xffaaaaaa;
+	maxRestore->foregroundColor.hover = 0xff000000;
+	maxRestore->foregroundColor.active = 0xff000000;
+	maxRestore->foregroundColor.inactive = 0xff000000;
+	maxRestore->foregroundColor.clicked = 0xff000000;
 
 	Widget* hide = widgets.emplace_back(Button(-2 * interactSettings.actual.captionHeight, 0, interactSettings.actual.captionHeight, interactSettings.actual.captionHeight, Location::RIGHT_TOP, LiteralText(L"\\f\1🗕")));
 	hide->mouseClick = [](Widget&, MouseButtonCode) { ShowWindow(MainWindowHandle, SW_MINIMIZE); };
@@ -261,7 +273,7 @@ void Button::render() const noexcept {
 }
 
 ConfirmWindow& ConfirmWindow::requireConfirm(const Function<void(Button&)>& func) {
-	confirm = dynamic_cast<Button*>(widgets.emplace_back(std::move(Button(0, 0, 0.4, 0.08, Location::CENTER, LiteralText(L"Confirm")))).ptr());
+	confirm = dynamic_cast<Button*>(widgets.emplace_back(std::move(Button(0, 0, 0.4, 0.08, Location::CENTER, TranslatableText(L"hbp.confirm.confirm")))).ptr());
 	confirm->location = Location::CENTER;
 	confirm->backgroundColor.active = 0x99000000;
 	confirm->backgroundColor.hover = 0x9900ff00;
@@ -281,15 +293,15 @@ ConfirmWindow& ConfirmWindow::requireConfirm(const Function<void(Button&)>& func
 		confirm->w = 0.5;
 		confirm->x = 0;
 	}
-	confirm->onTick = [](Widget& confirm, MouseButtonCode) { if (confirm.containsMouse()) confirm.backgroundColor.hover = static_cast<Button&>(confirm).animation.adaptsColor(0x99008800, 0x9900ff00); };
-	confirm->mouseLeave = [](Widget& confirm, MouseButtonCode) { static_cast<Button&>(confirm).animation.reset(); };
+	confirm->onTick = [](Widget& confirm, MouseButtonCode) { if (confirm.containsMouse()) confirm.backgroundColor.hover = dynamic_cast<Button&>(confirm).animation.adaptsColor(0x99008800, 0x9900ff00); };
+	confirm->mouseLeave = [](Widget& confirm, MouseButtonCode) { dynamic_cast<Button&>(confirm).animation.reset(); };
 	if (func) func(*confirm);
 	confirm->onResize();
 	return *this;
 }
 
 ConfirmWindow& ConfirmWindow::requireCancel(const Function<void(Button&)>& func) {
-	cancel = dynamic_cast<Button*>(widgets.emplace_back(std::move(Button(0, 0.1, 0.4, 0.08, Location::CENTER, LiteralText(L"Cancel")))).ptr());
+	cancel = dynamic_cast<Button*>(widgets.emplace_back(std::move(Button(0, 0.1, 0.4, 0.08, Location::CENTER, TranslatableText(L"hbp.confirm.cancel")))).ptr());
 	cancel->mouseClick = [this](Widget&, MouseButtonCode) {
 		game.tasks.pushNewed(allocatedFor(new Task([this](Task& self) {
 			if (game.closeWindow(this)) this->onClose();

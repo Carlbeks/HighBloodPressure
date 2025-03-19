@@ -6,7 +6,7 @@
 
 #include "warnings.h"
 #include "def.h"
-#include "File.h"
+#include "exception.h"
 
 struct IGarbage;
 template <typename T>
@@ -46,7 +46,7 @@ class GarbageCollector {
 	IGarbage* processing = nullptr;
 
 public:
-	GarbageCollector() { MainLogFile << L"initialize GarbageCollector" << std::endl; }
+	GarbageCollector() { Logger.info(L"initialize GarbageCollector"); }
 	GarbageCollector(const GarbageCollector&) = delete;
 	GarbageCollector(GarbageCollector&&) = delete;
 	GarbageCollector& operator=(const GarbageCollector&) = delete;

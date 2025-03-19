@@ -4,7 +4,7 @@
 
 #pragma once
 
-class File {
+class File final {
 public:
 	String path{};
 	std::wfstream file{};
@@ -13,7 +13,7 @@ public:
 	File(const String& path) : path(path) {}
 	File(const File&) = delete;
 	File(File&&) = delete;
-	~File() { if (file.is_open()) file.close(); }
+	~File() = default;
 	File& operator=(const File&) = delete;
 	File& operator=(File&&) = delete;
 
@@ -71,7 +71,7 @@ public:
 		return *this;
 	}
 
-	File& operator<<(decltype(std::endl<wchar, std::char_traits<wchar>>) value) {
+	File& operator<<(decltype(std::endl<wchar, std::char_traits<wchar>>)& value) {
 		if (file.is_open()) file << value;
 		return *this;
 	}
@@ -153,5 +153,3 @@ public:
 		return loadUntil(line);
 	}
 };
-
-inline File& [[carlbeks::releasedat]] MainLogFile = (new File(L"log.txt"))->binary().inputs().outputs().truncate().open().operator<<(L"initialize MainLogFile\n");

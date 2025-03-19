@@ -4,6 +4,9 @@
 
 #pragma once
 
+#include "warnings.h"
+#include "File.h"
+
 class Exception : public std::exception {
 	const String* type;
 
@@ -53,6 +56,7 @@ public:
 
 class RuntimeException final : public Exception {
 	inline static const String type = L"RuntimeException";
+
 public:
 	RuntimeException(String&& msg) : Exception(std::move(msg), &type) {}
 	RuntimeException(const String& msg) : Exception(msg, &type) {}
@@ -60,62 +64,98 @@ public:
 
 
 class PublicLogger final {
+	File mainLogger = File(L"log.txt");
 	[[nodiscard]] String build(const String& msg, const String& type) const;
 
-	template<typename T, typename... Ts> requires requires(T t, Ts... ts) {
-		std::wcout << t;
-		(std::wcout << ... << ts);
+	template<typename T, typename... Ts> requires requires(std::wstringstream stream, T& t, Ts&&... ts) {
+		stream << std::forward<T>(t);
+		(stream << ... << std::forward<Ts>(ts));
 	}
-	static void prints(T&& t, Ts&&... ts) {
-		std::wcout << L" " << t;
-		prints(ts...);
+	static void prints(std::wstringstream& stream, T&& t, Ts&&... ts) {
+		stream << L" " << std::forward<T>(t);
+		prints(stream, std::forward<Ts>(ts)...);
 	}
 
-	template<typename T> requires requires(T t) { std::wcout << t; }
-	static void prints(T&& t) { std::wcout << L" " << t; }
+	template<typename T> requires requires(std::wstringstream stream, T&& t) { stream << std::forward<T>(t); }
+	static void prints(std::wstringstream& stream, T&& t) { stream << L" " << std::forward<T>(t); }
+
+	template<typename T, typename... Ts> requires requires(std::wstringstream stream, T&& t, Ts&&... ts) {
+		stream << std::forward<T>(t);
+		(stream << ... << std::forward<Ts>(ts));
+	}
+	static void ofs(std::wstringstream& stream, T&& t, Ts&&... ts) {
+		stream << L" " << std::forward<T>(t);
+		ofs(stream, std::forward<Ts>(ts)...);
+	}
+
+	template<typename T> requires requires(std::wstringstream stream, T&& t) { stream << std::forward<T>(t); }
+	static void ofs(std::wstringstream& stream, T&& t) { stream << L" " << std::forward<T>(t); }
 
 public:
 	const String name;
-	PublicLogger(const String& name): name(L" [" + name + L"] ") { std::wcout << L"PublicLogger created\n"; }
+
+	PublicLogger(const String& name): name(L" [" + name + L"] ") {
+		std::wcout << L"PublicLogger created\n";
+		std::wcout.imbue(std::locale("zh-CN.UTF-8"));
+		mainLogger.truncate().open();
+	}
 
 	PublicLogger& put(const String& msg) noexcept {
-		std::wcout << L"[] [Root]" + name + msg + L"\n";
+		String str = L"          " + name + L"        " + msg + L"\n";
+		std::wcout << str;
+		mainLogger << str;
 		return *this;
 	}
 
 	PublicLogger& trace(const String& msg) noexcept {
-		std::wcout << build(msg, L"[Trace] ");
+		String str = build(msg, L"[Trace] ");
+		std::wcout << str;
+		mainLogger << str;
 		return *this;
 	}
 
 	PublicLogger& debug(const String& msg) noexcept {
-		std::wcout << build(msg, L"[Debug] ");
+		String str = build(msg, L"[Debug] ");
+		std::wcout << str;
+		mainLogger << str;
 		return *this;
 	}
 
 	PublicLogger& log(const String& msg) noexcept {
-		std::wcout << build(msg, L"[Log]   ");
+		String str = build(msg, L"[Log]   ");
+		std::wcout << str;
+		mainLogger << str;
 		return *this;
 	}
 
 	PublicLogger& info(const String& msg) noexcept {
-		std::wcout << build(msg, L"[Info]  ");
+		String str = build(msg, L"[Info]  ");
+		std::wcout << str;
+		mainLogger << str;
 		return *this;
 	}
 
 	PublicLogger& warn(const String& msg) noexcept {
-		std::wcout << build(msg, L"[Warn]  ");
+		String str = build(msg, L"[Warn]  ");
+		std::wcout << str;
+		mainLogger << str;
 		return *this;
 	}
 
 	PublicLogger& error(const String& msg) noexcept {
-		std::wcout << build(msg, L"[Error] ");
+		String str = build(msg, L"[Error] ");
+		std::wcout << str;
+		mainLogger << str;
 		return *this;
 	}
 
 	template<typename T> requires requires(T t) { std::wcout << t; }
 	PublicLogger& print(T&& msg) noexcept {
-		std::wcout << L"[] [Root]" + name << msg << std::endl;
+		std::wstringstream stream = {};
+		stream << L"          " << name << L"        " << msg << std::endl;
+		String str = stream.str();
+		mainLogger << str;
+		std::wcout << str;
 		return *this;
 	}
 
@@ -124,12 +164,34 @@ public:
 		std::wcout << (ts, ...);
 	}
 	PublicLogger& print(T&& msg, Ts&&... other) noexcept {
-		std::wcout << L"[] [Root]" + name << msg;
-		prints(other...);
-		std::wcout << std::endl;
+		std::wstringstream stream = {};
+		stream << L"          " << name << L"        " << msg;
+		prints(stream, other...);
+		stream << std::endl;
+		String str = stream.str();
+		mainLogger << str;
+		std::wcout << str;
 		return *this;
+	}
+
+	template<typename T, typename... Ts> requires requires(std::wstringstream stream, T&& t, Ts&&... ts) {
+		stream << std::forward<T>(t);
+		(stream << ... << std::forward<Ts>(ts));
+	}
+	String of(T&& t, Ts&&... ts) const {
+		std::wstringstream stream = {};
+		stream << std::forward<T>(t);
+		ofs(stream, ts...);
+		return stream.str();
+	}
+
+	template<typename T> requires requires(std::wstringstream stream, T&& t) { std::wstringstream(t); }
+	String of(T&& ts) const {
+		std::wstringstream stream = {};
+		ofs(stream, ts...);
+		return stream.str();
 	}
 };
 
-inline PublicLogger Logger(L"Main");
+[[carlbeks::releasedat("main.cpp")]] inline PublicLogger& Logger = *new PublicLogger(L"Main");
 

@@ -8,6 +8,7 @@
 
 #include "def.h"
 #include "Chars.h"
+#include "exception.h"
 #include "InteractManager.h"
 
 class LiteralText;
@@ -356,6 +357,7 @@ private:
 
 inline RenderableString operator""_renderable(const wchar* const text, const QWORD) noexcept { return RenderableString(text); }
 
+
 class Font {
 public:
 	Function<void(int width, int height)> resize;
@@ -508,31 +510,77 @@ public:
 	void refreshText() const noexcept;
 };
 
+using LangID = unsigned int;
+
 struct Language {
 	Map<String, TranslatedText> translateTable;
-	int id = 1;
+	LangID id = 1;
+	using IterText = Map<String, TranslatedText>::const_iterator;
+
+	Language(const LangID id) : id(id) {}
+	Language(const Language&) = delete;
+	Language(Language&&) = default;
+	Language& operator=(const Language&) = delete;
+	Language& operator=(Language&&) = default;
+
+	String toString() {
+		std::wstringstream stream{};
+		stream.imbue(std::locale("zh-CN.UTF-8"));
+		stream << L"Language ID: " << id << std::endl;
+		for (const auto& [key, value] : translateTable) stream << L"  " << key << L": (" << value.getText().length() << L") " << value.getText() << std::endl;
+		return stream.str();
+	}
 };
 
+void languageMakeChinese(Language&);
+
 class Translator {
-	Map<String, int> langMap{};
-	List<Language> langList{};
+	Map<String, Language> langMap{};
+	List<Language*> langList{};
 	TranslatedText nullText{ L"\\#FF""EE0000<translator-null>" };
 	String lang = L"zh-cn";
+	LangID idLangMax = 0;
 	int langConfig = 1;
-	int idLangMax = 1;
-	using IterID = Map<String, TranslatedText>::const_iterator;
+	using IterLangName = Map<String, Language>::const_iterator;
 	using IterLang = List<Language>::const_iterator;
 
 public:
-	Translator() { langMap.insert(std::make_pair(String(L"zh-cn"), 1)); }
-	void addLang(const String& lang) noexcept { langMap.insert(std::make_pair(lang, ++idLangMax)); }
-	void addLang(String&& lang) noexcept { langMap.insert(std::make_pair(lang, ++idLangMax)); }
+	void initialize() {
+		Language& chinese = addLang(L"zh-cn");
+		languageMakeChinese(chinese);
+		useLanguage(L"zh-cn");
+	}
+
+	Translator() = default;
+	Language& addLang(const String& lang) noexcept { return langMap.insert(std::make_pair(lang, Language(++idLangMax))).first->second; }
+	Language& addLang(String&& lang) noexcept { return langMap.insert(std::make_pair(lang, Language(++idLangMax))).first->second; }
+	Language& getLang(const String& lang) noexcept { return langMap.at(lang); }
+
+	const Language* useLanguage(const String& lang) noexcept {
+		const Map<String, Language>::iterator language = langMap.find(lang);
+		if (language == langMap.cend()) return nullptr;
+		for (const Language* i : langList) if (i->id == language->second.id) return i;
+		langList.push_front(&language->second);
+		return &language->second;
+	}
+
+	void unuseLanguage(const String& lang) noexcept {
+		const Map<String, Language>::iterator language = langMap.find(lang);
+		if (language == langMap.cend()) return;
+		for (const Language* i : langList)
+			if (i->id == language->second.id) {
+				langMap.erase(lang);
+				break;
+			}
+	}
+
 	void loadLang();
 
 	[[nodiscard]] const TranslatedText* getText(const String& id) const noexcept {
-		for (const auto& [translateTable, _] : langList) {
-			IterID iterator = translateTable.find(id);
-			if (iterator != translateTable.cend()) return &iterator->second;
+		Logger.debug(L"getText called");
+		for (const Language* language : langList) {
+			const Language::IterText iterator = language->translateTable.find(id);
+			if (iterator != language->translateTable.cend()) return &iterator->second;
 		}
 		return &nullText;
 	}

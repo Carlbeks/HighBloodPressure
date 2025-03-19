@@ -86,7 +86,7 @@ LRESULT __stdcall WndProc(const HWND hwnd, const UINT uMsg, const WPARAM wParam,
 		case WM_NCLBUTTONDOWN:
 			if (interactManager.isInClientCaption()) {
 				interactManager.update(VK_LBUTTON, true);
-				game.passEvent(MouseActionCode::MAC_DOWN, interactManager.getMouseButtonCode() | static_cast<unsigned int>(MouseButtonCodeEnum::MBC_L_CHANGE), interactManager.getMouseX(), interactManager.getMouseY());
+				if (game.passEvent(MouseActionCode::MAC_DOWN, interactManager.getMouseButtonCode() | static_cast<unsigned int>(MouseButtonCodeEnum::MBC_L_CHANGE), interactManager.getMouseX(), interactManager.getMouseY())) return 0;
 			}
 			break;
 		case WM_RBUTTONDOWN:
@@ -187,12 +187,12 @@ LRESULT __stdcall HookProc(const int code, const WPARAM wParam, const LPARAM lPa
 		case WM_LBUTTONUP:
 		case WM_NCLBUTTONUP:
 			PostMessageW(MainWindowHandle, WM_APP_LBUTTONUP, p->wParam, p->lParam);
-			MainLogFile << L"BUTTON-UP\n";
+			Logger.info(wParam ? L"[Hook] LButtonUp    (Removed)" : L"[Hook] LButtonUp");
 			return 0;
 		case WM_MBUTTONDOWN:
 		case WM_NCMBUTTONDOWN:
 			PostMessageW(MainWindowHandle, WM_APP_MBUTTONDOWN, p->wParam, p->lParam);
-			MainLogFile << L"BUTTON-DOWN\n";
+			Logger.info(wParam ? L"[Hook] MButtonDown  (Removed)" : L"[Hook] MButtonDown");
 			return 0;
 		default:
 			break;
@@ -245,11 +245,12 @@ void renderThread() {
 }
 
 int __stdcall wWinMain(const HINSTANCE hInstance, const HINSTANCE, [[maybe_unused]] const LPWSTR lpCmdLine, [[maybe_unused]] const int nShowCmd) {
-	MainLogFile << L"wWinMain started" << std::endl;
+	Logger.info(L"wWinMain started");
+	SetConsoleOutputCP(65001);
+	translator.initialize();
 	game.setWindow(StartWindow::create()); // 次序提前至最先
+	Logger.info(L"--------Program Start--------");
 	for (const auto& [addr, info] : memoryManager.allocated) { Logger.print(L"  using", addr, info.size, L"B", info.msg); }
-	MainLogFile << L"--------Program Start--------" << std::endl;
-	for (const auto& [addr, info] : memoryManager.allocated) { MainLogFile << L"  using " << addr << L" " << info.size << L"B " << info.msg << std::endl; }
 	WNDCLASSEX wc = {};
 	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.style = CS_HREDRAW | CS_VREDRAW;
@@ -266,7 +267,7 @@ int __stdcall wWinMain(const HINSTANCE hInstance, const HINSTANCE, [[maybe_unuse
 	if (!SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE)) Logger.print(L"SetProcessDpiAwarenessContext failed. LastError:", GetLastError());
 	MainInstance = hInstance;
 	MainWindowHandle = CreateWindowExW(0, wc.lpszClassName, wc.lpszClassName, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, nullptr, nullptr, hInstance, nullptr);
-	SetWindowLongW(MainWindowHandle, GWL_STYLE, WS_VISIBLE | WS_MAXIMIZEBOX | WS_MAXIMIZE);
+	SetWindowLongW(MainWindowHandle, GWL_STYLE, WS_VISIBLE | WS_MAXIMIZEBOX);
 	constexpr MARGINS margins{
 		.cxLeftWidth = 0,
 		.cxRightWidth = 0,
@@ -288,11 +289,10 @@ int __stdcall wWinMain(const HINSTANCE hInstance, const HINSTANCE, [[maybe_unuse
 	}));
 	SetWindowLongW(MainWindowHandle, GWL_EXSTYLE, GetWindowLongW(MainWindowHandle, GWL_EXSTYLE) | WS_EX_LAYERED);
 	SetLayeredWindowAttributes(MainWindowHandle, 0xffffff, 0xe0, LWA_COLORKEY | LWA_ALPHA);
-	ShowWindow(MainWindowHandle, SW_SHOWMAXIMIZED);
-	SetConsoleOutputCP(65001);
+	ShowWindow(MainWindowHandle, nShowCmd);
 	const HHOOK hook = SetWindowsHookW(WH_GETMESSAGE, HookProc);
 	const HACCEL hAccelTable = LoadAcceleratorsW(hInstance, MAKEINTRESOURCE(109));
-	if (!hook) MainLogFile << L"SetWindowsHookW failed. LastError: " << GetLastError() << std::endl;
+	if (!hook) Logger.error(Logger.of(L"SetWindowsHookW failed. LastError:", GetLastError()));
 	test();
 	{
 		interactManager.initialize();
@@ -313,9 +313,8 @@ int __stdcall wWinMain(const HINSTANCE hInstance, const HINSTANCE, [[maybe_unuse
 	}
 	DestroyAcceleratorTable(hAccelTable);
 	UnhookWindowsHookEx(hook);
-	for (const auto& [addr, info] : memoryManager.allocated) { Logger.print(L"using", addr, info.size, L"B", info.msg); }
-	MainLogFile << L"-------- Program End --------" << std::endl;
-	for (const auto& [addr, info] : memoryManager.allocated) { MainLogFile << L"  using " << addr << L" " << info.size << L"B " << info.msg << std::endl; }
+	Logger.info(L"------- Program End --------");
+	for (const auto& [addr, info] : memoryManager.allocated) { Logger.print(L"  using", addr, info.size, L"B", info.msg); }
 	_wsystem(L"pause");
 	return static_cast<int>(msg.wParam);
 }
@@ -325,9 +324,8 @@ struct Release {
 
 	~Release() {
 		delete &gc;
-		MainLogFile << L"--------- Last Check ---------" << std::endl;
-		for (const auto& [addr, info] : memoryManager.allocated) { MainLogFile << L"  using " << addr << L" " << info.size << L"B " << info.msg << std::endl; }
-		MainLogFile.close();
-		delete &MainLogFile;
+		Logger.put(L"--------- Last Check ---------\n");
+		for (const auto& [addr, info] : memoryManager.allocated) { Logger.print(L"  using", addr, info.size, L"B", info.msg); }
+		delete &Logger;
 	}
 } NEVER_REFERENCED_release;

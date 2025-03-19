@@ -5,7 +5,6 @@
 #pragma once
 
 #include "def.h"
-#include "exception.h"
 #include "hbp.h"
 
 struct KeyStatus {
@@ -43,7 +42,7 @@ struct MouseStatus {
 	[[nodiscard]] String toString() const noexcept { return L"MouseStatus: { name = \"" + name + L"\"; pressTimes = " + std::to_wstring(pressTimes) + L"; pressed = " + (pressed ? L"true, longHold = " : L"false, longHold = ") + (longHold ? L"true; }" : L"false; }"); }
 };
 
-struct KeyBinding;
+struct KeyBindingLegacy;
 
 class InteractManager {
 	TRACKMOUSEEVENT trackMouseEvent{
@@ -52,11 +51,11 @@ class InteractManager {
 		.hwndTrack = nullptr,
 		.dwHoverTime = HOVER_DEFAULT
 	};
-	KeyStatus keyStatus[256];
+	KeyStatus keyStatus[256] {};
 	int mouseX = 0, mouseY = 0;
 	int mouseWheel = 0;
 	int rebindResult = 0;
-	char outsideWindow = 0;// 鼠标是否在窗口外部。1位：在客户区；2位：在标题栏
+	char outsideWindow = 0; // 鼠标是否在窗口外部。1位：在客户区；2位：在标题栏
 	bool rebinding = false;
 	bool hovering = false;
 
@@ -99,7 +98,7 @@ public:
 	[[nodiscard]] bool isInSizeBox() const noexcept;
 	[[nodiscard]] bool isInClientCaption() const noexcept;
 	[[nodiscard]] KeyStatus& getKey(const int keyCode) noexcept { return keyStatus[keyCode]; }
-	[[nodiscard]] KeyStatus& getKey(const KeyBinding& binding) noexcept;
+	[[nodiscard]] KeyStatus& getKey(const KeyBindingLegacy& binding) noexcept;
 	[[nodiscard]] unsigned int /*MouseButtonCode*/ getMouseButtonCode() const noexcept;
 
 	int dealMouseWheel() noexcept {
@@ -111,12 +110,94 @@ public:
 
 inline InteractManager interactManager = InteractManager();
 
-struct KeyBinding {
+struct KeyBindingLegacy {
 	String id;
 	int keyCode;
 	[[nodiscard]] bool isPressed() const noexcept { return interactManager.getKey(keyCode).isPressed(); }
 	[[nodiscard]] unsigned int wasPressed() const noexcept { return interactManager.getKey(keyCode).wasPressed(); }
 	void deals() const noexcept { interactManager.getKey(keyCode).deals(); }
+};
+
+class KeyBinding;
+struct LessKeyBinding;
+class KeyRegion;
+struct LessKeyRegion;
+class KeyBindingManager;
+
+class KeyBinding {
+	friend struct LessKeyBinding;
+	friend class KeyBindingManager;
+	String id;
+	unsigned int pressTimes = 0;
+	unsigned char keyCode[8]{};
+
+public:
+	[[nodiscard]] bool isPressed() const noexcept {
+		for (const int i : keyCode) if (!interactManager.getKey(i).isPressed()) return false;
+		return true;
+	}
+
+	[[nodiscard]] unsigned int wasPressed() const noexcept { return pressTimes; }
+
+	[[nodiscard]] unsigned int boundKeyCount() const noexcept {
+		unsigned int ret = 0;
+		while (keyCode[ret] && ret < 8) ++ret;
+		return ret;
+	}
+};
+
+struct LessKeyBinding { // std::less
+	[[nodiscard]] bool operator()(const KeyBinding& lhs, const KeyBinding& rhs) const noexcept {
+		const unsigned int lc = lhs.boundKeyCount(), rc = rhs.boundKeyCount();
+		if (lc < rc) return false;
+		if (lc > rc) return true;
+		if (lhs.keyCode[0] < rhs.keyCode[0]) return true;
+		if (lhs.keyCode[0] > rhs.keyCode[0]) return false;
+		if (lhs.keyCode[1] == 0) return false;
+		if (lhs.keyCode[1] < rhs.keyCode[1]) return true;
+		if (lhs.keyCode[1] > rhs.keyCode[1]) return false;
+		if (lhs.keyCode[2] == 0) return false;
+		if (lhs.keyCode[2] < rhs.keyCode[2]) return true;
+		if (lhs.keyCode[2] > rhs.keyCode[2]) return false;
+		if (lhs.keyCode[3] == 0) return false;
+		if (lhs.keyCode[3] < rhs.keyCode[3]) return true;
+		if (lhs.keyCode[3] > rhs.keyCode[3]) return false;
+		if (lhs.keyCode[4] == 0) return false;
+		if (lhs.keyCode[4] < rhs.keyCode[4]) return true;
+		if (lhs.keyCode[4] > rhs.keyCode[4]) return false;
+		if (lhs.keyCode[5] == 0) return false;
+		if (lhs.keyCode[5] < rhs.keyCode[5]) return true;
+		if (lhs.keyCode[5] > rhs.keyCode[5]) return false;
+		if (lhs.keyCode[6] == 0) return false;
+		if (lhs.keyCode[6] < rhs.keyCode[6]) return true;
+		if (lhs.keyCode[6] > rhs.keyCode[6]) return false;
+		if (lhs.keyCode[7] == 0) return false;
+		if (lhs.keyCode[7] < rhs.keyCode[7]) return true;
+		return false;
+	}
+};
+
+class KeyRegion {
+	friend struct LessKeyRegion;
+	friend class KeyBindingManager;
+	const unsigned int idRegion;
+	mutable Set<KeyBinding, LessKeyBinding> keyBindings;
+
+	KeyRegion(const unsigned int id) : idRegion(id) {}
+	void addKeyBinding(const KeyBinding& binding) const noexcept { keyBindings.insert(binding); }
+	void addKeyBinding(KeyBinding&& binding) const noexcept { keyBindings.insert(std::move(binding)); }
+};
+
+struct LessKeyRegion {
+	[[nodiscard]] bool operator()(const KeyRegion& lhs, const KeyRegion& rhs) const noexcept { return lhs.idRegion < rhs.idRegion; }
+};
+
+class KeyBindingManager {
+	Set<KeyRegion, LessKeyRegion> keyRegions;
+	unsigned int keyRegionCount = 0;
+
+public:
+	const KeyRegion& registerRegion() noexcept { return keyRegions.emplace(KeyRegion(++keyRegionCount)).first.operator*(); }
 };
 
 class InteractSettings {

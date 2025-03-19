@@ -84,10 +84,12 @@ public:
 		floatWindow->onResize();
 	}
 
-	void passEvent(const MouseActionCode action, const MouseButtonCode value, const int x, const int y) const noexcept {
-		caption->passEvent(action, value, x, y);
+	int passEvent(const MouseActionCode action, const MouseButtonCode value, const int x, const int y) const noexcept {
+		int ret = 0;
+		ret = caption->passEvent(action, value, x, y);
 		if (Window* const window = getWindow()) window->passEvent(action, value, x, y);
 		floatWindow->passEvent(action, value, x, y);
+		return ret;
 	}
 };
 

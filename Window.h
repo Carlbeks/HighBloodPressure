@@ -60,11 +60,8 @@ protected:
 public:
 	Location location;
 	Location textLocation = Location::CENTER; // 多余字节预声明备用
+	char unused[2]{}; // [0]: [1]: maxRestore_flag_IsZoomed
 
-protected:
-	char unused[2]{};
-
-public:
 	Widget(const double x, const double y, const double w, const double h, const Location location) : x(x), y(y), w(w), h(h), location(location) {}
 
 	unsigned int colorSelector(const Color& clr) const;
@@ -116,11 +113,11 @@ public:
 	virtual void onMouseClick(const MouseButtonCode value) noexcept { if (mouseClick) mouseClick(*this, value); }
 	void tick() noexcept override { if (onTick) onTick(*this, 0); }
 
-	virtual void passEvent(const MouseActionCode action, const MouseButtonCode value, const int x, const int y) noexcept {
+	virtual int passEvent(const MouseActionCode action, const MouseButtonCode value, const int x, const int y) noexcept {
 		if (action == MouseActionCode::MAC_LEAVE || !isMouseIn(x, y)) {
 			if (hasMouse) onMouseLeave(0);
 			hasMouse = false;
-			return;
+			return 0;
 		}
 		hasMouse = true;
 		switch (action) {
@@ -142,6 +139,7 @@ public:
 			default:
 				break;
 		}
+		return 1;
 	}
 };
 
@@ -173,7 +171,7 @@ public:
 	 */
 	virtual void onClose() = 0;
 	virtual void onResize();
-	virtual void passEvent(MouseActionCode action, MouseButtonCode value, int x, int y) noexcept;
+	virtual int passEvent(MouseActionCode action, MouseButtonCode value, int x, int y) noexcept;
 };
 
 class WindowManager final : public AnywhereEditableList<Window, WindowManager>, public IRenderable, public ITickable {

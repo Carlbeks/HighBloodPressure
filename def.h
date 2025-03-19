@@ -18,14 +18,17 @@
 #include <atomic>
 #include <thread>
 #include <fstream>
+#include <sstream>
 #include <cmath>
+#include <set>
 
 using wchar = wchar_t;
 using QWORD = unsigned long long int;
 using String = std::wstring;
 using Thread = std::thread;
 template<typename K, typename V, typename Cmp = std::less<K>, typename Alloc = std::allocator<std::pair<const K, V>>> using Map = std::map<K, V, Cmp, Alloc>;
-template<typename T, typename Alloc = std::allocator<T>> using List = std::list<T, Alloc>;
+template<typename T, typename Comparator, typename Allocator = std::allocator<T>> using Set = std::set<T, Comparator, Allocator>;
+template<typename T, typename Allocator = std::allocator<T>> using List = std::list<T, Allocator>;
 template<typename F> using Function = std::function<F>;
 
 #define Success() { return 0; }

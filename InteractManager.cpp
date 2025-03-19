@@ -279,5 +279,5 @@ bool InteractManager::isInSizeBox() const noexcept { return isInWindow() && !isI
 bool InteractManager::isInClientCaption() const noexcept { return mouseX > interactSettings.actual.marginWidth && mouseX < renderer.getSyncWidth() - interactSettings.actual.marginWidth && mouseY > interactSettings.actual.marginWidth && mouseY < renderer.getSyncHeight() - interactSettings.actual.marginWidth; }
 
 
-KeyStatus& InteractManager::getKey(const KeyBinding& binding) noexcept { return keyStatus[binding.keyCode]; }
+KeyStatus& InteractManager::getKey(const KeyBindingLegacy& binding) noexcept { return keyStatus[binding.keyCode]; }
 MouseButtonCode InteractManager::getMouseButtonCode() const noexcept { return (keyStatus[VK_LBUTTON].isPressed() ? static_cast<unsigned int>(MouseButtonCodeEnum::MBC_L_DOWN) : 0) | (keyStatus[VK_RBUTTON].isPressed() ? static_cast<int>(MouseButtonCodeEnum::MBC_R_DOWN) : 0) | (keyStatus[VK_MBUTTON].isPressed() ? static_cast<int>(MouseButtonCodeEnum::MBC_M_DOWN) : 0); }
