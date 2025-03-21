@@ -4,9 +4,8 @@
 
 #include "def.h"
 
-#include "Chars.h"
-#include "exception.h"
-#include "Game.h"
+#include "utils\Chars.h"
+#include "utils\exception.h"
 
 template<TypeName Base> template<NewCopyable T> requires std::is_base_of_v<Base, T> && TypeName<T>
 void ObjectHolder<Base>::set(const T& value) {

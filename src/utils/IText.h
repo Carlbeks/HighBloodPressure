@@ -5,10 +5,10 @@
 #pragma once
 
 
-#include "def.h"
+#include "..\def.h"
 #include "Chars.h"
 #include "exception.h"
-#include "InteractManager.h"
+#include "..\interact\InteractManager.h"
 
 class LiteralText;
 class Translator;

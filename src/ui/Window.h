@@ -4,11 +4,11 @@
 
 #pragma once
 
-#include "Animation.h"
-#include "def.h"
-#include "gc.h"
-#include "Renderer.h"
-#include "IText.h"
+#include "..\def.h"
+#include "..\utils\gc.h"
+#include "..\render\Renderer.h"
+#include "..\game\Animation.h"
+#include "..\utils\IText.h"
 
 class WindowManager;
 
@@ -58,21 +58,21 @@ protected:
 	bool isAbsoluteLocation = false;
 
 public:
-	Location location;
-	Location textLocation = Location::CENTER; // 多余字节预声明备用
+	UILocation location;
+	UILocation textLocation = UILocation::CENTER; // 多余字节预声明备用
 	char unused[2]{}; // [0]: [1]: maxRestore_flag_IsZoomed
 
-	Widget(const double x, const double y, const double w, const double h, const Location location) : x(x), y(y), w(w), h(h), location(location) {}
+	Widget(const double x, const double y, const double w, const double h, const UILocation location) : x(x), y(y), w(w), h(h), location(location) {}
 
 	unsigned int colorSelector(const Color& clr) const;
 	void render() const noexcept override;
 
-	Widget& alignLocation(const Location loc) noexcept {
+	Widget& alignLocation(const UILocation loc) noexcept {
 		location = loc;
 		return *this;
 	}
 
-	Widget& alignTextLocation(const Location loc) noexcept {
+	Widget& alignTextLocation(const UILocation loc) noexcept {
 		textLocation = loc;
 		return *this;
 	}
@@ -220,8 +220,8 @@ class Button : public Widget {
 public:
 	ObjectHolder<IText> name;
 	Animation animation = Animation().features(Animation::AS_CUBIC).setDuration(20);
-	Button(const double x, const double y, const double w, const double h, const Location location, const ObjectHolder<IText>& text) : Widget(x, y, w, h, location), name(text) {}
-	Button(const double x, const double y, const double w, const double h, const Location location, ObjectHolder<IText>&& text) : Widget(x, y, w, h, location), name(std::move(text)) {}
+	Button(const double x, const double y, const double w, const double h, const UILocation location, const ObjectHolder<IText>& text) : Widget(x, y, w, h, location), name(text) {}
+	Button(const double x, const double y, const double w, const double h, const UILocation location, ObjectHolder<IText>&& text) : Widget(x, y, w, h, location), name(std::move(text)) {}
 	void render() const noexcept override;
 };
 

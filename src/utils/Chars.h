@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "def.h"
+#include "..\def.h"
 
 [[nodiscard]] inline unsigned int wtouib16(const wchar* string) noexcept {
 	unsigned int ret = 0;

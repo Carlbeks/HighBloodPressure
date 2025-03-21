@@ -4,9 +4,9 @@
 
 #include "Renderer.h"
 
-#include "Game.h"
-#include "hbp.h"
-#include "InteractManager.h"
+#include "..\game\Game.h"
+#include "..\hbp.h"
+#include "..\interact\InteractManager.h"
 
 void Renderer::gameStartRender() noexcept {
 	isRendering = true;

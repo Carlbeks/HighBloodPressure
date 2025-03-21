@@ -4,7 +4,8 @@
 
 #pragma once
 
-#include "warnings.h"
+#include "..\warnings.h"
+#include "..\def.h"
 #include "File.h"
 
 class Exception : public std::exception {

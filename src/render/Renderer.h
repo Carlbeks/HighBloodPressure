@@ -4,16 +4,16 @@
 
 #pragma once
 
-#include "def.h"
-#include "exception.h"
-#include "Task.h"
+#include "..\def.h"
+#include "..\utils\exception.h"
+#include "..\utils\Task.h"
 
 class Game;
 
 /**
  * 用于标记相对位置。
  */
-enum class Location : char { LEFT_TOP, LEFT, LEFT_BOTTOM, TOP, CENTER, BOTTOM, RIGHT_TOP, RIGHT, RIGHT_BOTTOM };
+enum class UILocation : char { LEFT_TOP, LEFT, LEFT_BOTTOM, TOP, CENTER, BOTTOM, RIGHT_TOP, RIGHT, RIGHT_BOTTOM };
 
 interface IRenderable {
 	virtual ~IRenderable() = default;

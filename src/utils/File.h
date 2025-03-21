@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "..\def.h"
+
 class File final {
 public:
 	String path{};

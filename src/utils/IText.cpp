@@ -4,8 +4,8 @@
 
 #include "IText.h"
 
-#include "def.h"
-#include "Renderer.h"
+#include "..\def.h"
+#include "..\render\Renderer.h"
 
 int RenderableString::getHeight() const noexcept {
 	int height = 0;

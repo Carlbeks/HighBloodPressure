@@ -4,7 +4,7 @@
 
 #pragma once
 
-#include "def.h"
+#include "..\def.h"
 
 class Animation {
 public:

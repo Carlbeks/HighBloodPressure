@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "def.h"
-#include "hbp.h"
+#include "..\hbp.h"
+#include "..\def.h"
 
 struct KeyStatus {
 	String name;

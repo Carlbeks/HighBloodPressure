@@ -4,9 +4,9 @@
 
 #pragma once
 
-#include "def.h"
+#include "..\def.h"
 #include "exception.h"
-#include "Game.h"
+#include "..\game\Game.h"
 
 String PublicLogger::build(const String& msg, const String& type) const {
 	return L"T-" + qwtowb10(game.getTick(), 8) + name + type + msg + L"\n";

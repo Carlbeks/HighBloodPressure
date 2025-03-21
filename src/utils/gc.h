@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "warnings.h"
-#include "def.h"
+#include "..\warnings.h"
+#include "..\def.h"
 #include "exception.h"
 
 struct IGarbage;

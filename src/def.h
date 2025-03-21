@@ -134,7 +134,6 @@ template<typename T> T* deallocating$(T* value) {
 #define deallocating(val) val
 #endif
 
-
 template<TypeName Base> class ObjectHolder {
 	Base* value;
 	bool hasValue;

@@ -1,7 +1,6 @@
 
 #include "includes.h"
-#include "IText.h"
-#include "TestCode.h"
+#include "utils/TestCode.h"
 
 LRESULT __stdcall WndProc(const HWND hwnd, const UINT uMsg, const WPARAM wParam, const LPARAM lParam) {
 	switch (uMsg) {
@@ -248,7 +247,6 @@ int __stdcall wWinMain(const HINSTANCE hInstance, const HINSTANCE, [[maybe_unuse
 	Logger.info(L"wWinMain started");
 	SetConsoleOutputCP(65001);
 	translator.initialize();
-	game.setWindow(StartWindow::create()); // 次序提前至最先
 	Logger.info(L"--------Program Start--------");
 	for (const auto& [addr, info] : memoryManager.allocated) { Logger.print(L"  using", addr, info.size, L"B", info.msg); }
 	WNDCLASSEX wc = {};
@@ -295,6 +293,7 @@ int __stdcall wWinMain(const HINSTANCE hInstance, const HINSTANCE, [[maybe_unuse
 	if (!hook) Logger.error(Logger.of(L"SetWindowsHookW failed. LastError:", GetLastError()));
 	test();
 	{
+		game.initialize();
 		interactManager.initialize();
 		GameThread = Thread(gameThread);
 		RenderThread = Thread(renderThread);

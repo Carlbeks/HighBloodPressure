@@ -3,7 +3,8 @@
 //
 
 #pragma once
-#include "Renderer.h"
+
+#include "..\render\Renderer.h"
 
 class Hud final : public IRenderable, public ITickable {
 public:

@@ -1,5 +1,5 @@
 
-#include "def.h"
+#include "..\def.h"
 
 #include "exception.h"
 #include "File.h"

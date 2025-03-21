@@ -4,9 +4,9 @@
 
 #include "Window.h"
 
-#include "Animation.h"
-#include "Game.h"
-#include "InteractManager.h"
+#include "..\game\Animation.h"
+#include "..\game\Game.h"
+#include "..\interact\InteractManager.h"
 
 int Window::pop() noexcept {
 	gc.submit(this);
@@ -45,7 +45,7 @@ void WindowManager::clear() noexcept {
 }
 
 CaptionWindow::CaptionWindow() {
-	Widget* close = widgets.emplace_back(Button(0, 0, interactSettings.actual.captionHeight, interactSettings.actual.captionHeight, Location::RIGHT_TOP, L"\\f\1\u2716"_literal));
+	Widget* close = widgets.emplace_back(Button(0, 0, interactSettings.actual.captionHeight, interactSettings.actual.captionHeight, UILocation::RIGHT_TOP, L"\\f\1\u2716"_literal));
 	close->mouseClick = [](Widget&, MouseButtonCode) { DestroyWindow(MainWindowHandle); };
 	close->onTick = [](const Widget& self, MouseButtonCode) { if (self.containsMouse()) game.getFloatWindow().push(TranslatableText(L"hbp.caption.close").getRenderableString()); };
 	close->absolute();
@@ -58,7 +58,7 @@ CaptionWindow::CaptionWindow() {
 	close->foregroundColor.inactive = 0xff000000;
 	close->foregroundColor.clicked = 0xff000000;
 
-	Widget* maxRestore = widgets.emplace_back(Button(-interactSettings.actual.captionHeight, 0, interactSettings.actual.captionHeight, interactSettings.actual.captionHeight, Location::RIGHT_TOP, IsZoomed(MainWindowHandle) ? L"\\f\1🗗"_literal : L"\\f\1🗖"_literal ));
+	Widget* maxRestore = widgets.emplace_back(Button(-interactSettings.actual.captionHeight, 0, interactSettings.actual.captionHeight, interactSettings.actual.captionHeight, UILocation::RIGHT_TOP, IsZoomed(MainWindowHandle) ? L"\\f\1🗗"_literal : L"\\f\1🗖"_literal ));
 	maxRestore->mouseClick = [](Widget&, MouseButtonCode) {};
 	maxRestore->mouseClick = [](Widget& self, MouseButtonCode) {
 		if ((self.unused[1] = static_cast<char>(IsZoomed(MainWindowHandle)))) ShowWindow(MainWindowHandle, SW_RESTORE);
@@ -76,7 +76,7 @@ CaptionWindow::CaptionWindow() {
 	maxRestore->foregroundColor.inactive = 0xff000000;
 	maxRestore->foregroundColor.clicked = 0xff000000;
 
-	Widget* hide = widgets.emplace_back(Button(-2 * interactSettings.actual.captionHeight, 0, interactSettings.actual.captionHeight, interactSettings.actual.captionHeight, Location::RIGHT_TOP, L"\\f\1🗕"_literal));
+	Widget* hide = widgets.emplace_back(Button(-2 * interactSettings.actual.captionHeight, 0, interactSettings.actual.captionHeight, interactSettings.actual.captionHeight, UILocation::RIGHT_TOP, L"\\f\1🗕"_literal));
 	hide->onTick = [](const Widget& self, MouseButtonCode) { if (self.containsMouse()) game.getFloatWindow().push(TranslatableText(L"hbp.caption.minimize").getRenderableString()); };
 	hide->mouseClick = [](Widget&, MouseButtonCode) { ShowWindow(MainWindowHandle, SW_MINIMIZE); };
 	hide->absolute();
@@ -89,7 +89,7 @@ CaptionWindow::CaptionWindow() {
 	hide->foregroundColor.inactive = 0xff000000;
 	hide->foregroundColor.clicked = 0xff000000;
 
-	Widget* options = widgets.emplace_back(Button(0, 0, interactSettings.actual.captionHeight, interactSettings.actual.captionHeight, Location::LEFT_TOP, L"\\f\1⛭"_literal));
+	Widget* options = widgets.emplace_back(Button(0, 0, interactSettings.actual.captionHeight, interactSettings.actual.captionHeight, UILocation::LEFT_TOP, L"\\f\1⛭"_literal));
 	options->onTick = [](const Widget& self, MouseButtonCode) {
 		if (self.containsMouse()) {
 			game.getFloatWindow().push(TranslatableText(L"hbp.float.settings").getRenderableString());
@@ -122,11 +122,11 @@ void CaptionWindow::onResize() {
 		widget->w = interactSettings.actual.captionHeight;
 		widget->h = interactSettings.actual.captionHeight;
 		switch (widget->location) {
-			case Location::LEFT_TOP:
+			case UILocation::LEFT_TOP:
 				widget->x = left;
 				left += interactSettings.actual.captionHeight;
 				break;
-			case Location::RIGHT_TOP:
+			case UILocation::RIGHT_TOP:
 				widget->x = right;
 				right -= interactSettings.actual.captionHeight;
 				break;
@@ -187,39 +187,39 @@ void Widget::onResize() {
 		width = static_cast<int>(w);
 		height = static_cast<int>(h);
 		switch (location) {
-			case Location::LEFT_TOP:
+			case UILocation::LEFT_TOP:
 				left = static_cast<int>(x);
 				top = static_cast<int>(y);
 				break;
-			case Location::LEFT:
+			case UILocation::LEFT:
 				left = static_cast<int>(x);
 				top = static_cast<int>(y) + (renderer.getHeight() - height >> 1);
 				break;
-			case Location::LEFT_BOTTOM:
+			case UILocation::LEFT_BOTTOM:
 				left = static_cast<int>(x);
 				top = static_cast<int>(y) + renderer.getHeight() - height;
 				break;
-			case Location::TOP:
+			case UILocation::TOP:
 				left = static_cast<int>(x) + (renderer.getWidth() - width >> 1);
 				top = static_cast<int>(y);
 				break;
-			case Location::CENTER:
+			case UILocation::CENTER:
 				left = static_cast<int>(x) + (renderer.getWidth() - width >> 1);
 				top = static_cast<int>(y) + (renderer.getHeight() - height >> 1);
 				break;
-			case Location::BOTTOM:
+			case UILocation::BOTTOM:
 				left = static_cast<int>(x) + (renderer.getWidth() - width >> 1);
 				top = static_cast<int>(y) + renderer.getHeight() - height;
 				break;
-			case Location::RIGHT_TOP:
+			case UILocation::RIGHT_TOP:
 				left = static_cast<int>(x) + renderer.getWidth() - width;
 				top = static_cast<int>(y);
 				break;
-			case Location::RIGHT:
+			case UILocation::RIGHT:
 				left = static_cast<int>(x) + renderer.getWidth() - width;
 				top = static_cast<int>(y) + (renderer.getHeight() - height >> 1);
 				break;
-			case Location::RIGHT_BOTTOM:
+			case UILocation::RIGHT_BOTTOM:
 				left = static_cast<int>(x) + renderer.getWidth() - width;
 				top = static_cast<int>(y) + renderer.getHeight() - height;
 				break;
@@ -228,39 +228,39 @@ void Widget::onResize() {
 		width = static_cast<int>(renderer.getWidth() * w);
 		height = static_cast<int>(renderer.getHeight() * h);
 		switch (location) {
-			case Location::LEFT_TOP:
+			case UILocation::LEFT_TOP:
 				left = static_cast<int>(renderer.getWidth() * x);
 				top = static_cast<int>(renderer.getHeight() * y);
 				break;
-			case Location::LEFT:
+			case UILocation::LEFT:
 				left = static_cast<int>(renderer.getWidth() * x);
 				top = static_cast<int>(renderer.getHeight() * y) + (renderer.getHeight() - height >> 1);
 				break;
-			case Location::LEFT_BOTTOM:
+			case UILocation::LEFT_BOTTOM:
 				left = static_cast<int>(renderer.getWidth() * x);
 				top = static_cast<int>(renderer.getHeight() * y) + renderer.getHeight() - height;
 				break;
-			case Location::TOP:
+			case UILocation::TOP:
 				left = static_cast<int>(renderer.getWidth() * x) + (renderer.getWidth() - width >> 1);
 				top = static_cast<int>(renderer.getHeight() * y);
 				break;
-			case Location::CENTER:
+			case UILocation::CENTER:
 				left = static_cast<int>(renderer.getWidth() * x) + (renderer.getWidth() - width >> 1);
 				top = static_cast<int>(renderer.getHeight() * y) + (renderer.getHeight() - height >> 1);
 				break;
-			case Location::BOTTOM:
+			case UILocation::BOTTOM:
 				left = static_cast<int>(renderer.getWidth() * x) + (renderer.getWidth() - width >> 1);
 				top = static_cast<int>(renderer.getHeight() * y) + renderer.getHeight() - height;
 				break;
-			case Location::RIGHT_TOP:
+			case UILocation::RIGHT_TOP:
 				left = static_cast<int>(renderer.getWidth() * x) + renderer.getWidth() - width;
 				top = static_cast<int>(renderer.getHeight() * y);
 				break;
-			case Location::RIGHT:
+			case UILocation::RIGHT:
 				left = static_cast<int>(renderer.getWidth() * x) + renderer.getWidth() - width;
 				top = static_cast<int>(renderer.getHeight() * y) + (renderer.getHeight() - height >> 1);
 				break;
-			case Location::RIGHT_BOTTOM:
+			case UILocation::RIGHT_BOTTOM:
 				left = static_cast<int>(renderer.getWidth() * x) + renderer.getWidth() - width;
 				top = static_cast<int>(renderer.getHeight() * y) + renderer.getHeight() - height;
 				break;
@@ -274,8 +274,8 @@ void Button::render() const noexcept {
 }
 
 ConfirmWindow& ConfirmWindow::requireConfirm(const Function<void(Button&)>& func) {
-	confirm = dynamic_cast<Button*>(widgets.emplace_back(std::move(Button(0, 0, 0.4, 0.08, Location::CENTER, TranslatableText(L"hbp.confirm.confirm")))).ptr());
-	confirm->location = Location::CENTER;
+	confirm = dynamic_cast<Button*>(widgets.emplace_back(std::move(Button(0, 0, 0.4, 0.08, UILocation::CENTER, TranslatableText(L"hbp.confirm.confirm")))).ptr());
+	confirm->location = UILocation::CENTER;
 	confirm->backgroundColor.active = 0x99000000;
 	confirm->backgroundColor.hover = 0x9900ff00;
 	confirm->backgroundColor.clicked = 0xff00ee00;
@@ -302,14 +302,14 @@ ConfirmWindow& ConfirmWindow::requireConfirm(const Function<void(Button&)>& func
 }
 
 ConfirmWindow& ConfirmWindow::requireCancel(const Function<void(Button&)>& func) {
-	cancel = dynamic_cast<Button*>(widgets.emplace_back(std::move(Button(0, 0.1, 0.4, 0.08, Location::CENTER, TranslatableText(L"hbp.confirm.cancel")))).ptr());
+	cancel = dynamic_cast<Button*>(widgets.emplace_back(std::move(Button(0, 0.1, 0.4, 0.08, UILocation::CENTER, TranslatableText(L"hbp.confirm.cancel")))).ptr());
 	cancel->mouseClick = [this](Widget&, MouseButtonCode) {
 		game.tasks.pushNewed(allocatedFor(new Task([this](Task& self) {
 			if (game.closeWindow(this)) this->onClose();
 			self.pop();
 			})));
 	};
-	cancel->location = Location::CENTER;
+	cancel->location = UILocation::CENTER;
 	cancel->backgroundColor.active = 0x99000000;
 	cancel->backgroundColor.hover = 0x99ff0000;
 	cancel->backgroundColor.clicked = 0xffee0000;

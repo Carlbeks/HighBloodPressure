@@ -4,10 +4,12 @@
 
 #pragma once
 
-#include "gc.h"
-#include "Hud.h"
-#include "Task.h"
-#include "Window.h"
+#include "../utils/gc.h"
+#include "../ui/Hud.h"
+#include "../utils/Task.h"
+#include "../ui/Window.h"
+
+class [[carlbeks::predecl, carlbeks::defineat("World.h")]] WorldManager;
 
 class Game final /* : public IRenderable, public ITickable */ {
 	friend void gameThread();
@@ -20,7 +22,9 @@ class Game final /* : public IRenderable, public ITickable */ {
 public:
 	TaskScheduler tasks; // 8
 	std::minstd_rand random;
+	WorldManager* worldManager = nullptr;
 
+	void initialize();
 	Game();
 	~Game();
 

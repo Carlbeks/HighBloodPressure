@@ -10,7 +10,7 @@ class StartWindow final : public Window {
 	TranslatableText title = TranslatableText(L"hbp.title");
 
 	StartWindow() {
-		Button* start = dynamic_cast<Button*>(widgets.emplace_back(std::move(Button(0, 0.1, 0.4, 0.08, Location::CENTER, L"hbp.button.exit"_translates))).ptr());
+		Button* start = dynamic_cast<Button*>(widgets.emplace_back(std::move(Button(0, 0.1, 0.4, 0.08, UILocation::CENTER, L"hbp.button.exit"_translates))).ptr());
 		start->onTick = [](const Widget& self, MouseButtonCode) { if (self.containsMouse()) game.getFloatWindow().push(L"hbp.float.exit"_translates.getRenderableString()); };
 		start->mouseClick = [](Widget&, MouseButtonCode) {
 			game.setWindow(&ConfirmWindow::of(L"hbp.confirming.exit"_translates)->requireCancel().requireConfirm([](Button& confirm) {
@@ -18,9 +18,9 @@ class StartWindow final : public Window {
 				confirm.onTick = [](Widget& self, MouseButtonCode) { if (self.containsMouse()) self.backgroundColor.hover = static_cast<Button&>(self).animation.adaptsColor(0x99008800, 0x9900ff00); };
 			}));
 		};
-		Button* optn = dynamic_cast<Button*>(widgets.emplace_back(std::move(Button(0, 0.2, 0.4, 0.08, Location::CENTER, L"hbp.button.settings"_translates))).ptr());
+		Button* optn = dynamic_cast<Button*>(widgets.emplace_back(std::move(Button(0, 0.2, 0.4, 0.08, UILocation::CENTER, L"hbp.button.settings"_translates))).ptr());
 		optn->onTick = [](const Widget& self, MouseButtonCode) { if (self.containsMouse()) game.getFloatWindow().push(L"hbp.float.settings"_translates.getRenderableString()); };
-		Button* exit = dynamic_cast<Button*>(widgets.emplace_back(std::move(Button(0, 0.3, 0.4, 0.08, Location::CENTER, L"hbp.button.start"_translates))).ptr());
+		Button* exit = dynamic_cast<Button*>(widgets.emplace_back(std::move(Button(0, 0.3, 0.4, 0.08, UILocation::CENTER, L"hbp.button.start"_translates))).ptr());
 		exit->onTick = [](const Widget& self, MouseButtonCode) { if (self.containsMouse()) game.getFloatWindow().push(L"hbp.float.start"_translates.getRenderableString()); };
 		exit->mouseClick = [](Widget&, MouseButtonCode) {
 			game.setWindow(&ConfirmWindow::of(L"hbp.confirming.start"_translates)->requireCancel().requireConfirm([](Button& confirm) {

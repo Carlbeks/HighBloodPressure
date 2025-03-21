@@ -4,7 +4,7 @@
 
 #include "InteractManager.h"
 
-#include "Window.h"
+#include "..\ui\Window.h"
 
 InteractManager::InteractManager() {
 	keyStatus[0x00].name = L"NONE";
