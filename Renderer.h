@@ -4,8 +4,6 @@
 
 #pragma once
 
-#include <thread>
-
 #include "def.h"
 #include "exception.h"
 #include "Task.h"

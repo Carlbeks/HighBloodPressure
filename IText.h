@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <ranges>
 
 #include "def.h"
 #include "Chars.h"
@@ -355,8 +354,7 @@ private:
 	}
 };
 
-inline RenderableString operator""_renderable(const wchar* const text, const QWORD) noexcept { return RenderableString(text); }
-
+inline RenderableString operator""_renderable(const wchar* const text, const QWORD length) noexcept { return RenderableString(String(text, length)); }
 
 class Font {
 public:
@@ -468,7 +466,7 @@ public:
 	[[nodiscard]] Font& getDefault() const noexcept { return *defaultFont; }
 
 	void resize(const int width, const int height) {
-		for (auto& font : fonts | std::views::values)
+		for (auto& [_, font] : fonts)
 			if (font.resize) font.resize(width, height);
 			else {
 				font.height = static_cast<long>(interactSettings.actual.fontHeight * font.heightModifier);
@@ -497,6 +495,8 @@ public:
 	const RenderableString& getRenderableString() const noexcept override { return renderableString; }
 } TranslatedText;
 
+inline LiteralText operator""_literal(const wchar* const text, const QWORD length) noexcept { return LiteralText(String(text, length)); }
+
 class TranslatableText final : public IText {
 	const String idSrc;
 	mutable const LiteralText* target = nullptr;
@@ -505,10 +505,16 @@ class TranslatableText final : public IText {
 public:
 	TranslatableText(const String& id) : idSrc(id) {}
 	TranslatableText(String&& id) : idSrc(std::move(id)) {}
+	TranslatableText(const TranslatableText& other) : idSrc(other.idSrc) {}
+	TranslatableText(TranslatableText&& other) noexcept : idSrc(std::move(other.idSrc)) {}
+	const String& getID() const noexcept { return idSrc; }
 	const String& getText() const noexcept override;
 	const RenderableString& getRenderableString() const noexcept override;
 	void refreshText() const noexcept;
 };
+
+inline TranslatableText operator""_translates(const wchar* const text, const QWORD length) noexcept { return TranslatableText(String(text, length)); }
+inline TranslatedText operator""__translated(const wchar* const text, const QWORD length) noexcept { return TranslatedText(String(text, length)); }
 
 using LangID = unsigned int;
 

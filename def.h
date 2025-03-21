@@ -11,6 +11,7 @@
 
 #include <typeinfo>
 #include <functional>
+#include <thread>
 #include <iostream>
 #include <list>
 #include <string>
@@ -21,6 +22,8 @@
 #include <sstream>
 #include <cmath>
 #include <set>
+#include <filesystem>
+#include <random>
 
 using wchar = wchar_t;
 using QWORD = unsigned long long int;

@@ -37,6 +37,8 @@ add_executable(${PROJECT_NAME}
         IText.h
         exception.cpp
         exception.h
+        File.h
+        File.cpp
         TextureManager.cpp
         TextureManager.h
 

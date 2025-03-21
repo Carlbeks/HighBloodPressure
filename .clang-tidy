@@ -4,6 +4,7 @@ Checks: >
   -altera-struct-pack-align,
   -altera-unroll-loops,
   -boost-*,
+  -bugprone-assignment-in-if-condition,
   -bugprone-easily-swappable-parameters,
   -bugprone-forward-declaration-namespace,
   -bugprone-reserved-identifier,

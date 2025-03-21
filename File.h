@@ -153,3 +153,12 @@ public:
 		return loadUntil(line);
 	}
 };
+
+class FileAccessor {
+public:
+	[[nodiscard]] bool exists(const String& path) const { return std::filesystem::exists(path); }
+
+	File getAccess(const String& path);
+};
+
+inline FileAccessor fileAccessor = FileAccessor();
