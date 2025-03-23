@@ -5,8 +5,11 @@
 #pragma once
 
 #include "..\def.h"
+#include "..\utils\math.h"
 #include "..\utils\exception.h"
 #include "..\utils\Task.h"
+#include "..\interact\InteractManager.h"
+#include "..\game\world\Location.h"
 
 class Game;
 
@@ -17,7 +20,7 @@ enum class UILocation : char { LEFT_TOP, LEFT, LEFT_BOTTOM, TOP, CENTER, BOTTOM,
 
 interface IRenderable {
 	virtual ~IRenderable() = default;
-	virtual void render() const noexcept = 0;
+	virtual void render(double tickDelta) const noexcept = 0;
 };
 
 interface ITickable {
@@ -39,16 +42,36 @@ inline static constexpr Color TextColor = {
 	.clicked = 0xff000000
 };
 
+class [[carlbeks::predecl, carlbeks::defineat("Entity.h")]] Entity;
+
+class Camera {
+	Vector2D position; // 当前位置
+	Vector2D velocity; // 移动速度，如果设置了平滑Camera
+	Vector2D targetPosition; // Camera需要移动到的位置
+	Entity* targeting = nullptr;
+
+public:
+	void setTargetEntity(Entity* target) noexcept { targeting = target; }
+	[[nodiscard]] double getCurrentX() const noexcept { return position.getX(); }
+	[[nodiscard]] double getCurrentY() const noexcept { return position.getY(); }
+	[[nodiscard]] double getTargetX() const noexcept { return targetPosition.getX(); }
+	[[nodiscard]] double getTargetY() const noexcept { return targetPosition.getY(); }
+	[[nodiscard]] Vector2D getCurrentPosition() const noexcept { return position; }
+	[[nodiscard]] Vector2D getVelocity() const noexcept { return velocity; }
+	[[nodiscard]] Vector2D getTargetPosition() const noexcept { return targetPosition; }
+};
+
 class Renderer final : public ITickable {
 	friend class Game;
 	friend class Font;
-	mutable List<HGDIOBJ> failed;
 	inline static BLENDFUNCTION blendFunction = {
 		.BlendOp = AC_SRC_OVER, // Only
 		.BlendFlags = 0, // Must 0
 		.SourceConstantAlpha = 255, // 预乘
 		.AlphaFormat = 0, // Not AC_SRC_ALPHA
 	};
+	mutable List<HGDIOBJ> failed;
+	mutable Camera camera;
 	HDC MainDC = nullptr; // 8
 	HDC resizeCopyDC = nullptr; // 8
 	HBITMAP resizeCopyBitmap = nullptr; // 8
@@ -72,22 +95,24 @@ class Renderer final : public ITickable {
 public:
 	byte windowSize = 0; // 1, Windows: SIZE_***
 	byte reserved[5]{};
-	Task resizeReloadBitmap{ [this](Task& task) {
-		Logger.info(L"Scheduled task: resize reload bitmap " + std::to_wstring(windowWidth) + L" * " + std::to_wstring(windowHeight));
-		if (!canvasBitmap) {
-			canvasBitmap = CreateCompatibleBitmap(MainDC, windowWidth, windowHeight);
-			if (canvasBitmap) SelectObject(canvasDC, canvasBitmap);
+	Task resizeReloadBitmap{
+		[this](Task& task) {
+			Logger.info(L"Scheduled task: resize reload bitmap " + std::to_wstring(windowWidth) + L" * " + std::to_wstring(windowHeight));
+			if (!canvasBitmap) {
+				canvasBitmap = CreateCompatibleBitmap(MainDC, windowWidth, windowHeight);
+				if (canvasBitmap) SelectObject(canvasDC, canvasBitmap);
+			}
+			if (!assistBitmap) {
+				assistBitmap = CreateCompatibleBitmap(canvasDC, windowWidth, windowHeight);
+				if (assistBitmap) SelectObject(assistDC, assistBitmap);
+			}
+			if (canvasBitmap && assistBitmap) {
+				task.pop();
+				Logger.info(L"Successfully reload bitmap " + ptrtow(reinterpret_cast<QWORD>(canvasBitmap)) + L" " + ptrtow(reinterpret_cast<QWORD>(assistBitmap)));
+				this->resizeEnd();
+			}
 		}
-		if (!assistBitmap) {
-			assistBitmap = CreateCompatibleBitmap(canvasDC, windowWidth, windowHeight);
-			if (assistBitmap) SelectObject(assistDC, assistBitmap);
-		}
-		if (canvasBitmap && assistBitmap) {
-			task.pop();
-			Logger.info(L"Successfully reload bitmap " + ptrtow(reinterpret_cast<QWORD>(canvasBitmap)) + L" " + ptrtow(reinterpret_cast<QWORD>(assistBitmap)));
-			this->resizeEnd();
-		}
-	} };
+	};
 
 private:
 	void gameStartRender() noexcept;
@@ -118,20 +143,16 @@ public:
 	[[nodiscard]] int getSyncHeight() const noexcept { return syncHeight; }
 	[[nodiscard]] bool checkResizing() const noexcept { return isResizing; }
 	void tick() noexcept override {}
-
 	/**
 	 * @attention 会忽略A透明度值
 	 * @param argb ARGB式颜色
 	 * @return int BGR式颜色
 	 */
 	[[nodiscard]] static unsigned int changeColorFormat(const unsigned int argb) { return argb << 16 & 0xff0000 | argb & 0xff00 | argb >> 16 & 0xff; }
-
 	void assertRendering() const noexcept(false) { if (!isRendering) throw InvalidOperationException(L"Operation should be done while rendering"); }
-
 	void assertRenderThread() const noexcept(false) { if (std::this_thread::get_id() != renderThread) throw InvalidOperationException(L"Operation should be done in render thread"); }
-
+	Camera& getCamera() const noexcept { return camera; }
 	void resizeStart() noexcept { isResizing = true; }
-
 	void resizeShow() const noexcept { StretchBlt(MainDC, 0, 0, syncWidth, syncHeight, resizeCopyDC, 0, 0, resizeCopyWidth, resizeCopyHeight, SRCCOPY); }
 
 	void resizeEnd() noexcept {
@@ -143,9 +164,13 @@ public:
 	}
 
 	void deleteObject(HGDIOBJ obj) const noexcept {
-		for (List<HGDIOBJ>::const_iterator iter = failed.cbegin(); iter != failed.cend(); ++iter)
-			if (!DeleteObject(*iter)) Logger.error(L"DeleteObject failed again. Deleting: " + std::to_wstring(reinterpret_cast<QWORD>(*iter)));
-			else failed.erase(iter);
+		List<HGDIOBJ> tempList;
+		tempList.swap(failed);
+		for (List<HGDIOBJ>::const_iterator iter = tempList.cbegin(); iter != tempList.cend(); ++iter)
+			if (!DeleteObject(*iter)) {
+				Logger.error(L"DeleteObject failed again. Deleting: " + std::to_wstring(reinterpret_cast<QWORD>(*iter)));
+				failed.push_back(*iter);
+			}
 		if (obj && !DeleteObject(obj)) {
 			failed.push_back(obj);
 			Logger.error(L"DeleteObject failed. Deleting: " + std::to_wstring(reinterpret_cast<QWORD>(obj)));
@@ -166,7 +191,8 @@ public:
 			const HBRUSH clr = CreateSolidBrush(changeColorFormat(color));
 			FillRect(canvasDC, &rect, clr);
 			deleteObject(clr);
-		} else {
+		}
+		else {
 			const RECT rect{
 				.left = 0,
 				.top = 0,
@@ -185,10 +211,12 @@ public:
 		assertRendering();
 		//assertRenderThread();
 		if ((color & 0xff000000) == 0) return;
-		if ((color & 0xff000000) == 0xff000000) { const HBRUSH clr = CreateSolidBrush(changeColorFormat(color));
+		if ((color & 0xff000000) == 0xff000000) {
+			const HBRUSH clr = CreateSolidBrush(changeColorFormat(color));
 			FillRect(canvasDC, rect, clr);
 			deleteObject(clr);
-		} else {
+		}
+		else {
 			const RECT r{
 				.left = 0,
 				.top = 0,
@@ -202,6 +230,38 @@ public:
 			if (!AlphaBlend(canvasDC, rect->left, rect->top, r.right, r.bottom, assistDC, 0, 0, r.right, r.bottom, blendFunction)) Logger.error(L"AlphaBlend failed");
 		}
 	}
+
+	void fillWorld(const Vector2D& from, const Vector2D& to, const unsigned int color) const {
+		RECT rect{};
+		Vector2D vector = (from - camera.getCurrentPosition()) * interactSettings.actual.mapScale;
+		rect.left = static_cast<long>(vector.getX());
+		if (rect.left >= windowWidth) return;
+		rect.top = static_cast<long>(vector.getY());
+		if (rect.top >= windowHeight) return;
+		vector = (to - camera.getCurrentPosition()) * interactSettings.actual.mapScale;
+		rect.right = static_cast<long>(vector.getX());
+		if (rect.right < 0) return;
+		rect.bottom = static_cast<long>(vector.getY());
+		if (rect.bottom < 0) return;
+		fill(&rect, color);
+	}
+
+	void fillWorld(const Vector2D& from, const double blockWidth, const double blockHeight, const unsigned int color) const {
+		RECT rect{};
+		Vector2D vector = (from - camera.getCurrentPosition()) * interactSettings.actual.mapScale;
+		rect.left = static_cast<long>(vector.getX());
+		if (rect.left >= windowWidth) return;
+		rect.top = static_cast<long>(vector.getY());
+		if (rect.top >= windowHeight) return;
+		vector += Vector2D(blockWidth, blockHeight).multiply(interactSettings.actual.mapScale);
+		rect.right = static_cast<long>(vector.getX());
+		if (rect.right < 0) return;
+		rect.bottom = static_cast<long>(vector.getY());
+		if (rect.bottom < 0) return;
+		fill(&rect, color);
+	}
+
+	void fillWorldBlock(const BlockLocation& from, const unsigned int color) const { fillWorld(from.getPosition(), 1, 1, color); }
 };
 
 extern Renderer renderer;

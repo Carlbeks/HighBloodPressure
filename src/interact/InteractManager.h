@@ -206,6 +206,7 @@ class InteractSettings {
 		int marginWidth = 40;
 		int fontHeight = 96;
 		int floatWindowMargin = 16;
+		double mapScale = 32.0; // 1格表现为32像素
 	};
 
 	struct Constants {
@@ -215,12 +216,15 @@ class InteractSettings {
 		 */
 		double uiScale = 1;
 		double screenScale = 1;
+		double smoothCamera = 0.5; // 相机平滑度。为0，始终瞬时设置相机的位置；为1，相机不动。
+		long long msPerTick = 50;
+		long long msPerRender = 16;
 		unsigned int floatWindowBackground = 0xdd000000;
 	};
 
 public:
-	Options options;
-	Options actual;
+	Options options; // 用户设置值
+	Options actual; // 适应Scale后的实际值
 	Constants constants;
 
 	InteractSettings& setUiScale(const double scale) noexcept {

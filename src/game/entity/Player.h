@@ -6,8 +6,7 @@
 
 #include "Entity.h"
 
-class Player : public Entity, public IMoveable, public IDamageable {
+class Player : public Entity, public IDamageable {
 public:
-	Player(const Location& location) : Entity(location) {}
-	Player(Location&& location) : Entity(std::move(location)) {}
+	Player(const Vector2D& location) : Entity(location) {}
 };

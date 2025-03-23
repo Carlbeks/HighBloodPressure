@@ -76,7 +76,7 @@ public:
 	}
 
 	/** 只能在gameThread调用 */
-	template <TypeName T>
+	template<TypeName T>
 	void submit(T* ptr) noexcept(false) {
 		IGarbage* newedGarbage = allocatedFor(new Garbage<T>(ptr));
 		builtinSubmit(newedGarbage);
@@ -147,4 +147,4 @@ public:
 	}
 };
 
-inline GarbageCollector& [[carlbeks::releasedat("main.cpp")]] gc = *new GarbageCollector();
+inline GarbageCollector& [[carlbeks::releasedat("def.cpp")]] gc = *new GarbageCollector();

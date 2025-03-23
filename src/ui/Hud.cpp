@@ -4,5 +4,5 @@
 
 #include "Hud.h"
 
-void Hud::render() const noexcept {}
+void Hud::render(double tickDelta) const noexcept {}
 void Hud::tick() noexcept {}

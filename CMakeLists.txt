@@ -21,39 +21,22 @@ enable_testing()
 
 add_executable(${PROJECT_NAME}
         src/main.cpp
-        src/def.h
-        src/def.cpp
-        src/interact/InteractManager.h
-        src/interact/InteractManager.cpp
-        src/render/Renderer.h
-        src/render/Renderer.cpp
-        src/game/Game.h
-        src/game/Game.cpp
-        src/ui/Window.h
-        src/ui/Window.cpp
-        src/ui/Hud.h
-        src/ui/Hud.cpp
-        src/utils/IText.h
-        src/utils/IText.cpp
-        src/utils/exception.h
-        src/utils/exception.cpp
-        src/utils/File.h
-        src/utils/File.cpp
-        src/render/TextureManager.h
-        src/render/TextureManager.cpp
 
-        src/includes.h
-        src/utils/Chars.h
-        src/ui/xWindows.h
-        src/utils/TestCode.h
-        src/game/entity/Entity.h
-        src/game/entity/Player.h
+        src/def.cpp
+        src/utils/File.cpp
+        src/utils/exception.cpp
+
+        src/interact/InteractManager.cpp
+        src/utils/IText.cpp
+        src/game/world/Location.cpp
+        src/render/Renderer.cpp
+        src/render/TextureManager.cpp
+        src/ui/Hud.cpp
+        src/ui/Window.cpp
+
+        src/game/Game.cpp
+        src/game/entity/Entity.cpp
         src/game/entity/Player.cpp
-        src/game/entity/Damage.h
-        src/utils/math.h
-        src/game/world/World.h
-        src/game/world/Location.h
-        src/game/world/Block.h
 )
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

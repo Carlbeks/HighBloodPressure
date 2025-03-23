@@ -10,6 +10,7 @@
 #include "../ui/Window.h"
 
 class [[carlbeks::predecl, carlbeks::defineat("World.h")]] WorldManager;
+class [[carlbeks::predecl, carlbeks::defineat("Entity.h")]] EntityManager;
 
 class Game final /* : public IRenderable, public ITickable */ {
 	friend void gameThread();
@@ -23,24 +24,17 @@ public:
 	TaskScheduler tasks; // 8
 	std::minstd_rand random;
 	WorldManager* worldManager = nullptr;
+	EntityManager* entityManager = nullptr;
 
 	void initialize();
 	Game();
 	~Game();
 
-	[[nodiscard]] QWORD getTick() const noexcept { return currentTick; }
 	int closeWindow(Window* const window) noexcept { return windows.pop(window); }
-
-	void render() const noexcept {
-		if (renderer.checkResizing()) return;
-		renderer.gameStartRender();
-		caption->render();
-		hud.render();
-		windows.render();
-		floatWindow->render();
-		renderer.gameEndRender();
-		gc.pack();
-	}
+	[[nodiscard]] FloatWindow& getFloatWindow() const noexcept { return *floatWindow; }
+	[[nodiscard]] QWORD getTick() const noexcept { return currentTick; }
+	void tick() noexcept;
+	void render(double tickDelta) const noexcept;
 
 	/**
 	 * 所有窗口都提交给Game保管，在适当时刻自动删除。
@@ -59,25 +53,12 @@ public:
 		Success();
 	}
 
-	[[nodiscard]] FloatWindow& getFloatWindow() const noexcept { return *floatWindow; }
-
 	[[nodiscard]] Window* getWindow() const noexcept {
-		if (auto *const back = windows.back()) return dynamic_cast<Window*>(back);
+		if (auto* const back = windows.back()) return dynamic_cast<Window*>(back);
 		Logger.error(L"Game::getWindow returns nullptr");
 		return nullptr;
 	}
 
-	void tick() noexcept {
-		++currentTick;
-		floatWindow->clear();
-		floatWindow->tick();
-		caption->tick();
-		hud.tick();
-		windows.tick();
-		floatWindow->update();
-		tasks.runAll();
-		gc.collect();
-	}
 
 	void handleResize() {
 		caption->onResize();

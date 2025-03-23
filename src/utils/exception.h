@@ -162,7 +162,7 @@ public:
 
 	template<typename T, typename... Ts> requires requires(T t, Ts... ts) {
 		std::wcout << t;
-		std::wcout << (ts, ...);
+		(std::wcout << ... << std::forward<Ts>(ts));
 	}
 	PublicLogger& print(T&& msg, Ts&&... other) noexcept {
 		std::wstringstream stream = {};
@@ -194,5 +194,5 @@ public:
 	}
 };
 
-[[carlbeks::releasedat("main.cpp")]] inline PublicLogger& Logger = *new PublicLogger(L"Main");
+[[carlbeks::releasedat("def.cpp")]] inline PublicLogger& Logger = *new PublicLogger(L"Main");
 

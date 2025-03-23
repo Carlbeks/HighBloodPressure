@@ -16,10 +16,8 @@ inline HRESULT RemoveDefaultCaption(const HWND hWnd, const MARGINS* p) noexcept 
 
 inline bool ShowConsoleIO() noexcept {
 	AllocConsole();
-	FILE* pCout;
-	freopen_s(&pCout, "CONOUT$", "w", stdout);
-	FILE* pCin;
-	freopen_s(&pCin, "CONOUT$", "r+", stdin);
+	freopen("CONOUT$", "w", stdout);
+	freopen("CONOUT$", "r+", stdin);
 	return true;
 }
 

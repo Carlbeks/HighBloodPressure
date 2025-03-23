@@ -146,19 +146,22 @@ public:
 				if (config.idFont == idFont || config.idFont != 0) {
 					font = false;
 					++flags;
-				} else config.idFont = idFont;
+				}
+				else config.idFont = idFont;
 			}
 			if (clr) {
 				if (config.color == color || config.color != 0xffffffff) {
 					clr = false;
 					++flags;
-				} else config.color = color;
+				}
+				else config.color = color;
 			}
 			if (bg) {
 				if (config.background == background || config.background != 0xffffffff) {
 					bg = false;
 					++flags;
-				} else config.background = background;
+				}
+				else config.background = background;
 			}
 			configs.push_back(std::move(config));
 			++iterator;
@@ -374,14 +377,17 @@ private:
 	const FontID id;
 	bool adaptAllSize = false;
 
-	Font(const FontID id, const String& name, const double heightModifier, const double yOffset, const long escapement, const long orientation, const bool adaptAllSize) : name{ name }, yOffset(yOffset), heightModifier(heightModifier), height(static_cast<long>(interactSettings.actual.fontHeight * heightModifier)), escapement(escapement), orientation(orientation), yOffsetPx(static_cast<long>(yOffset * height)), id(id), adaptAllSize(adaptAllSize) {}
+	Font(const FontID id, const String& name, const double heightModifier, const double yOffset, const long escapement, const long orientation, const bool adaptAllSize) : name{name}, yOffset(yOffset), heightModifier(heightModifier), height(static_cast<long>(interactSettings.actual.fontHeight * heightModifier)), escapement(escapement), orientation(orientation), yOffsetPx(static_cast<long>(yOffset * height)), id(id), adaptAllSize(adaptAllSize) {}
 
-	Font(const FontID id, String&& name, const double heightModifier, const double yOffset, const long escapement, const long orientation, const bool adaptAllSize) : name{ std::move(name) }, yOffset(yOffset), heightModifier(heightModifier), height(static_cast<long>(interactSettings.actual.fontHeight * heightModifier)), escapement(escapement), orientation(orientation), yOffsetPx(static_cast<long>(yOffset * height)), id(id), adaptAllSize(adaptAllSize) {}
+	Font(const FontID id, String&& name, const double heightModifier, const double yOffset, const long escapement, const long orientation, const bool adaptAllSize) : name{std::move(name)}, yOffset(yOffset), heightModifier(heightModifier), height(static_cast<long>(interactSettings.actual.fontHeight * heightModifier)), escapement(escapement), orientation(orientation), yOffsetPx(static_cast<long>(yOffset * height)), id(id), adaptAllSize(adaptAllSize) {}
 
 public:
 	Font(const Font&) = default;
 	Font(Font&&) = default;
-	~Font() { clear(); }
+	~Font() {
+		// 此处Font的回收已经到结束阶段，GDI应该已经收回了资源，不能在手动释放了
+		if (fonts.size()) Logger.warn(L"Font is not successfully cleared when ~Font() called: " + name);
+	}
 
 private:
 	HFONT tryCreate(const RenderableString::StringConfig& config) const {
@@ -446,6 +452,8 @@ public:
 		newFont(L"Arial", 1.0, -0.13);
 		newFont(L"", 1.0, -0.05);
 	}
+
+	void finalize() { for (auto& [id, font] : fonts) font.clear(); }
 
 	[[nodiscard]] const Font& get(const FontID id) const noexcept {
 		const IterFonts iter = fonts.find(id);
@@ -543,7 +551,7 @@ void languageMakeChinese(Language&);
 class Translator {
 	Map<String, Language> langMap{};
 	List<Language*> langList{};
-	TranslatedText nullText{ L"\\#FF""EE0000<translator-null>" };
+	TranslatedText nullText{L"\\#FF""EE0000<translator-null>"};
 	String lang = L"zh-cn";
 	LangID idLangMax = 0;
 	int langConfig = 1;
@@ -583,7 +591,6 @@ public:
 	void loadLang();
 
 	[[nodiscard]] const TranslatedText* getText(const String& id) const noexcept {
-		Logger.debug(L"getText called");
 		for (const Language* language : langList) {
 			const Language::IterText iterator = language->translateTable.find(id);
 			if (iterator != language->translateTable.cend()) return &iterator->second;

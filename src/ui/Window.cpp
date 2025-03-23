@@ -13,7 +13,7 @@ int Window::pop() noexcept {
 	Success();
 }
 
-void Window::render() const noexcept { for (const Widget* widget : widgets) widget->render(); }
+void Window::render(const double tickDelta) const noexcept { for (const Widget* widget : widgets) widget->render(tickDelta); }
 void Window::tick() noexcept { for (Widget* widget : widgets) widget->tick(); }
 void Window::onResize() { for (Widget* widget : widgets) widget->onResize(); }
 
@@ -58,13 +58,13 @@ CaptionWindow::CaptionWindow() {
 	close->foregroundColor.inactive = 0xff000000;
 	close->foregroundColor.clicked = 0xff000000;
 
-	Widget* maxRestore = widgets.emplace_back(Button(-interactSettings.actual.captionHeight, 0, interactSettings.actual.captionHeight, interactSettings.actual.captionHeight, UILocation::RIGHT_TOP, IsZoomed(MainWindowHandle) ? L"\\f\1🗗"_literal : L"\\f\1🗖"_literal ));
+	Widget* maxRestore = widgets.emplace_back(Button(-interactSettings.actual.captionHeight, 0, interactSettings.actual.captionHeight, interactSettings.actual.captionHeight, UILocation::RIGHT_TOP, IsZoomed(MainWindowHandle) ? L"\\f\1🗗"_literal : L"\\f\1🗖"_literal));
 	maxRestore->mouseClick = [](Widget&, MouseButtonCode) {};
 	maxRestore->mouseClick = [](Widget& self, MouseButtonCode) {
 		if ((self.unused[1] = static_cast<char>(IsZoomed(MainWindowHandle)))) ShowWindow(MainWindowHandle, SW_RESTORE);
 		else ShowWindow(MainWindowHandle, SW_MAXIMIZE);
 	};
-	maxRestore->onTick = [](const Widget& self, MouseButtonCode) { if (self.containsMouse()) game.getFloatWindow().push(self.unused[1] ? TranslatableText(L"hbp.caption.maximize").getRenderableString() : TranslatableText(L"hbp.caption.restore").getRenderableString() ); };
+	maxRestore->onTick = [](const Widget& self, MouseButtonCode) { if (self.containsMouse()) game.getFloatWindow().push(self.unused[1] ? TranslatableText(L"hbp.caption.maximize").getRenderableString() : TranslatableText(L"hbp.caption.restore").getRenderableString()); };
 	maxRestore->absolute();
 	maxRestore->unused[1] = static_cast<char>(IsZoomed(MainWindowHandle));
 	maxRestore->backgroundColor.hover = 0xffcccccc;
@@ -111,9 +111,9 @@ CaptionWindow::CaptionWindow() {
 bool CaptionWindow::onOpen() { throw InvalidOperationException(L"Should not open CaptionWindow"); }
 void CaptionWindow::onClose() { throw InvalidOperationException(L"Should not close CaptionWindow"); }
 
-void CaptionWindow::render() const noexcept {
+void CaptionWindow::render(const double tickDelta) const noexcept {
 	renderer.fill(0, 0, renderer.getWidth(), interactSettings.actual.captionHeight, 0xff666666);
-	for (const Widget* widget : widgets) widget->render();
+	for (const Widget* widget : widgets) widget->render(tickDelta);
 }
 
 void CaptionWindow::onResize() {
@@ -137,7 +137,7 @@ void CaptionWindow::onResize() {
 	Window::onResize();
 }
 
-void FloatWindow::render() const noexcept {
+void FloatWindow::render(double tickDelta) const noexcept {
 	if (not interactManager.isInWindow()) {
 		strings.async();
 		return;
@@ -180,7 +180,7 @@ unsigned int Widget::colorSelector(const Color& clr) const {
 	return clr.hover;
 }
 
-void Widget::render() const noexcept { renderer.fill(left, top, width, height, colorSelector(backgroundColor)); }
+void Widget::render(double tickDelta) const noexcept { renderer.fill(left, top, width, height, colorSelector(backgroundColor)); }
 
 void Widget::onResize() {
 	if (isAbsoluteLocation) {
@@ -268,8 +268,8 @@ void Widget::onResize() {
 	}
 }
 
-void Button::render() const noexcept {
-	Widget::render();
+void Button::render(const double tickDelta) const noexcept {
+	Widget::render(tickDelta);
 	if (name) fontManager.getDefault().drawCenter(name->getRenderableString(), left, top, width, height, colorSelector(foregroundColor));
 }
 

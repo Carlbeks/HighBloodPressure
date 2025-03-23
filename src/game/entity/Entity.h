@@ -5,11 +5,15 @@
 #pragma once
 
 #include "..\..\utils\math.h"
+#include "..\..\render\Renderer.h"
 #include "..\world\Location.h"
 #include "Damage.h"
 
 class Entity;
-class World;
+class [[carlbeks::predecl, carlbeks::defineat("World.h")]] World;
+class EntityManager;
+
+using EntityID = QWORD;
 
 interface IDamageable {
 protected:
@@ -22,40 +26,65 @@ public:
 	virtual void onDeath() = 0;
 };
 
-interface IMoveable {
-protected:
-	double maxSpeed = 1.0;
-	Vector2D velocity;
-
-	virtual ~IMoveable() = default;
-public:
-	void setVelocity(const Vector2D& velocity) { this->velocity = velocity; }
-	[[nodiscard]] Vector2D getVelocity() const { return this->velocity; }
-};
-
 interface IArtificialIntelligent {
 protected:
 	virtual ~IArtificialIntelligent() = default;
 	virtual void aiProcess() {}
 };
 
-class Entity {
+class Entity : public IRenderable, public ITickable {
 	friend class World;
-	Location location;
-	QWORD id = 0;
+	friend class EntityManager;
+	EntityID idEntity = 0;
+	World* world = nullptr;
 
 protected:
-	Entity(const Location& location) : location(location) {}
-	Entity(Location&& location) : location(std::move(location)) {}
-	virtual ~Entity() = default;
+	Location location;
+	Vector2D velocity;
+	double maxSpeed = 1.0;
+
+	Entity(const Vector2D& location) : location(location) {}
+	~Entity() override = default;
 
 public:
-	virtual void tick() {}
-	virtual void onRemove() {}
+	virtual void onRemove() = 0;
+	virtual void onEnterWorld(World* world, WorldTransportReason reason) {}
+	virtual void onExitWorld(World* world, WorldTransportReason reason) {}
+
+	void setVelocity(const Vector2D& velocity) noexcept { this->velocity = velocity; }
+	[[nodiscard]] const Location& getLocation() const noexcept { return this->location; }
+	[[nodiscard]] const Location& getLocation(const double tickDelta) const noexcept { return Location(this->location.getPosition() + this->velocity * tickDelta, this->location.getWorld()); }
+	[[nodiscard]] Vector2D getVelocity() const noexcept { return this->velocity; }
+	[[nodiscard]] double getMaxSpeed() const noexcept { return this->maxSpeed; }
 };
 
-class Enemy : public Entity, public IDamageable, public IMoveable, public IArtificialIntelligent {
+class Enemy : public Entity, public IDamageable, public IArtificialIntelligent {
 protected:
-	Enemy(const Location& location) : Entity(location) {}
-	Enemy(Location&& location) : Entity(std::move(location)) {}
+	Enemy(const Vector2D& location) : Entity(location) {}
+};
+
+class EntityManager {
+	friend class Game;
+	EntityID nextID = 0;
+	Map<EntityID, Entity*> entities;
+	EntityManager() = default;
+	~EntityManager() { for (auto& [id, entity] : entities) { entity->onRemove(); } }
+
+public:
+	int addEntity(Entity* entity) {
+		if (!entity) Failed();
+		if (entity->idEntity) Failed();
+		entity->idEntity = ++nextID;
+		entities.emplace(entity->idEntity, entity);
+		Success();
+	}
+
+	int removeEntity(Entity* entity) {
+		if (!entity) Failed();
+		if (entity->idEntity) Failed();
+		if (entity->getLocation().getWorld()) Failed(); // 确保必须已经从其他世界移除
+		entities.erase(entity->idEntity);
+		entity->onRemove();
+		Success();
+	}
 };
