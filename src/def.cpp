@@ -51,7 +51,7 @@ String ptrtow(const QWORD value) { return qwtowb16(value, 16); }
 namespace $LimitedUse {
 	Release::~Release() {
 		delete &gc;
-		Logger.put(L"--------- Last Check ---------\n");
+		Logger.put(L"--------- Last Check ---------");
 		for (const auto& [addr, info] : memoryManager.allocated) { Logger.print(L"  using", addr, info.size, L"B", info.msg); }
 		delete &Logger;
 		delete &memoryManager;

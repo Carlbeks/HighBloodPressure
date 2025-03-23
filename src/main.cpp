@@ -494,13 +494,16 @@ void renderThread() {
 		using Time = time_point<system_clock>;
 		renderer.initialize();
 		Time lastRender = system_clock::now();
+		// bool _TestFlag = false;
 		while (isRunning) {
 			const Time thisTime = system_clock::now();
 			if (thisTime - lastRender < milliseconds(interactSettings.constants.msPerRender)) {
 				Sleep(1);
+				// if (_TestFlag) _TestFlag = false, Logger.debug(L"Render Test: " + std::to_wstring((thisTime - lastRender) / milliseconds(1)));
 				continue;
 			}
-			game.render(nRange(static_cast<double>((thisTime - lastTick).count()) / interactSettings.constants.msPerRender, 0.0, 1.0));
+			// _TestFlag = true;
+			game.render(nRange(static_cast<double>((thisTime - lastTick).count()) / static_cast<double>(interactSettings.constants.msPerRender), 0.0, 1.0));
 			lastRender = thisTime;
 		}
 	} catch (const Exception& e) { Logger.log(L"Render thread exception: " + e.getMessage()); }
@@ -516,7 +519,7 @@ int __stdcall wWinMain(const HINSTANCE hInstance, const HINSTANCE, [[maybe_unuse
 	SetUnhandledExceptionFilter(UnhandledExceptionFilter);
 	translator.initialize();
 	Logger.info(L"--------Program Start--------");
-	for (const auto& [addr, info] : memoryManager.allocated) { Logger.print(L"  using", addr, info.size, L"B", info.msg); }
+	for (const auto& [addr, info] : $LimitedUse::memoryManager.allocated) { Logger.print(L"  using", addr, info.size, L"B", info.msg); }
 	WNDCLASSEX wc = {};
 	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.style = CS_HREDRAW | CS_VREDRAW;
@@ -541,26 +544,26 @@ int __stdcall wWinMain(const HINSTANCE hInstance, const HINSTANCE, [[maybe_unuse
 		.cyBottomHeight = 0
 	};
 	RemoveDefaultCaption(MainWindowHandle, &margins);
-	int a = -40;
-	game.tasks.pushNewed(new Task([&a](Task& self) {
-		if (a) {
-			++a;
-			SetLayeredWindowAttributes(MainWindowHandle, 0xffffff, static_cast<BYTE>(0xff * (40 + a) / 40), LWA_COLORKEY | LWA_ALPHA);
-		} else {
-			SetLayeredWindowAttributes(MainWindowHandle, 0xffffff, 0xff, LWA_COLORKEY | LWA_ALPHA);
-			self.schedulePop(true);
-			SetWindowLongW(MainWindowHandle, GWL_EXSTYLE, GetWindowLongW(MainWindowHandle, GWL_EXSTYLE) & ~WS_EX_LAYERED);
-		}
-		return 0;
-	}));
 	SetWindowLongW(MainWindowHandle, GWL_EXSTYLE, GetWindowLongW(MainWindowHandle, GWL_EXSTYLE) | WS_EX_LAYERED);
-	SetLayeredWindowAttributes(MainWindowHandle, 0xffffff, 0xe0, LWA_COLORKEY | LWA_ALPHA);
+	// SetLayeredWindowAttributes(MainWindowHandle, 0xffffff, 0xe0, LWA_COLORKEY | LWA_ALPHA);
+	SetLayeredWindowAttributes(MainWindowHandle, 0xffffff, 0, LWA_COLORKEY);
 	ShowWindow(MainWindowHandle, nShowCmd);
 	const HHOOK hook = SetWindowsHookW(WH_GETMESSAGE, HookProc);
 	const HACCEL hAccelTable = LoadAcceleratorsW(hInstance, MAKEINTRESOURCE(109));
 	if (!hook) Logger.error(Logger.of(L"SetWindowsHookW failed. LastError:", GetLastError()));
 	test();
 	{
+		// int a = -40;
+		// game.tasks.pushNewed(allocatedFor(new Task([&a](Task& self) {
+		// 	if (a) SetLayeredWindowAttributes(MainWindowHandle, 0xffffff, static_cast<BYTE>(0xff * (40 + ++a) / 40), LWA_COLORKEY | LWA_ALPHA);
+		// 	else {
+		// 		SetLayeredWindowAttributes(MainWindowHandle, 0xffffff, 0xff, LWA_COLORKEY | LWA_ALPHA);
+		// 		self.schedulePop(true);
+		// 		SetWindowLongW(MainWindowHandle, GWL_EXSTYLE, GetWindowLongW(MainWindowHandle, GWL_EXSTYLE) & ~WS_EX_LAYERED);
+		// 	}
+		// 	return 0;
+		// 	})
+		// ));
 		game.initialize();
 		interactManager.initialize();
 		World* w = StartWorld::create();
@@ -584,10 +587,10 @@ int __stdcall wWinMain(const HINSTANCE hInstance, const HINSTANCE, [[maybe_unuse
 	DestroyAcceleratorTable(hAccelTable);
 	UnhookWindowsHookEx(hook);
 	Logger.info(L"------- Program End --------");
-	for (const auto& [addr, info] : memoryManager.allocated) { Logger.print(L"  using", addr, info.size, L"B", info.msg); }
-	_wsystem(L"pause");
+	for (const auto& [addr, info] : $LimitedUse::memoryManager.allocated) { Logger.print(L"  using", addr, info.size, L"B", info.msg); }
 	{
 		fontManager.finalize(); // 似乎GDI有终止自动回收，所以此代码需要提前
 	}
+	_wsystem(L"pause");
 	return static_cast<int>(msg.wParam);
 }

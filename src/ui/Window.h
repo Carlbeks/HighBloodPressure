@@ -103,6 +103,7 @@ public:
 	virtual void onMouseUp(const MouseButtonCode code) noexcept {
 		if (mouseUp) mouseUp(*this, code);
 		if (hasMouseTrigger) onMouseClick(code);
+		hasMouseTrigger = false;
 	}
 
 	virtual void onMouseLeave(const MouseButtonCode value) noexcept {

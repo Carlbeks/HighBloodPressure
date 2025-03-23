@@ -4,10 +4,10 @@
 
 #pragma once
 
-#include "../utils/gc.h"
-#include "../ui/Hud.h"
-#include "../utils/Task.h"
-#include "../ui/Window.h"
+// #include "..\utils\gc.h"
+#include "..\ui\Hud.h"
+#include "..\utils\Task.h"
+#include "..\ui\Window.h"
 
 class [[carlbeks::predecl, carlbeks::defineat("World.h")]] WorldManager;
 class [[carlbeks::predecl, carlbeks::defineat("Entity.h")]] EntityManager;

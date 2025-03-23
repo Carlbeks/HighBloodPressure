@@ -5,7 +5,7 @@
 #pragma once
 
 #define __CARLBEKS_DEBUG__
-#define __CARLBEKS_MEMORY__ 3
+#define __CARLBEKS_MEMORY__ 2
 
 #pragma warning(disable: 4819)
 
@@ -69,6 +69,8 @@ using Function = std::function<F>;
 #pragma comment(lib, "Uxtheme.lib")
 #pragma comment(lib, "winmm.lib")
 
+#include "warnings.h"
+
 template <typename T>
 concept Copyable = requires(const T& t) { T(t); };
 template <typename T>
@@ -94,18 +96,19 @@ namespace $LimitedUse {
 
 		~Release();
 	} inline gcRelease_LoggerRelease_memoryManagerRelease;
-} // namespace $LimitedUse
 
-struct MemoryManager {
-	struct MemoryInfo {
-		const String msg;
-		std::size_t size;
-	};
+	struct MemoryManager {
+		struct MemoryInfo {
+			const String msg;
+			std::size_t size;
+		};
 
-	Map<void*, MemoryInfo> allocated{};
+		Map<void*, MemoryInfo> allocated{};
+		std::atomic_bool acquiring = false;
 
-	constexpr MemoryManager() noexcept = default;
-} inline& [[carlbeks::releasedat("def.cpp")]] memoryManager = *new MemoryManager;
+		constexpr MemoryManager() noexcept = default;
+	} inline& [[carlbeks::releasedat("def.cpp")]] memoryManager = *new MemoryManager;
+}
 
 void requireNonnull(const void* value) noexcept(false);
 void checkAllocation(const void* value) noexcept(false);
@@ -123,30 +126,40 @@ extern String atow(const char* chars);
 template <typename T>
 T* allocatedFor$(T* value, const String& msg = L"", std::size_t size = sizeof(T)) {
 	requireNonnull(value);
-	const auto& k = memoryManager.allocated.emplace(value, MemoryManager::MemoryInfo{L"[" + atow(typeid(T).name()) + L"] " + msg, size}).first;
-#if __CARLBEKS_MEMORY__ > 1
+	bool expect = false;
+	while (!$LimitedUse::memoryManager.acquiring.compare_exchange_strong(expect, true)) expect = false;
+	const auto& k = $LimitedUse::memoryManager.allocated.emplace(value, $LimitedUse::MemoryManager::MemoryInfo{L"[" + atow(typeid(T).name()) + L"] " + msg, size}).first;
+#if __CARLBEKS_MEMORY__ > 2
 	$LimitedUse::printAllocate(value, k->second.size, k->second.msg);
 #endif
+	$LimitedUse::memoryManager.acquiring.store(false);
 	return value;
 }
 
 template <typename T>
 T* deallocating$(T* value, const String& stack) {
-#if __CARLBEKS_MEMORY__ > 1
-	const MemoryManager::MemoryInfo* info = nullptr;
-	if (memoryManager.allocated.contains(value)) info = &memoryManager.allocated.at(value);
+	bool expect = false;
+	while (!$LimitedUse::memoryManager.acquiring.compare_exchange_strong(expect, true)) expect = false;
+#if __CARLBEKS_MEMORY__ > 2
+	const $LimitedUse::MemoryManager::MemoryInfo* info = nullptr;
+	if ($LimitedUse::memoryManager.allocated.contains(value)) info = &$LimitedUse::memoryManager.allocated.at(value);
 	$LimitedUse::printDeallocate(value, info ? info->size : 0, info ? info->msg : L"???");
 #endif
-	if (value) { if (!memoryManager.allocated.erase(value)) $LimitedUse::printDeallocateWarning(value, L"value not recorded" + stack); }
+	if (value) { if (!$LimitedUse::memoryManager.allocated.erase(value)) $LimitedUse::printDeallocateWarning(value, L"value not recorded" + stack); }
+	$LimitedUse::memoryManager.acquiring.store(false);
 	return value;
 }
+
+#ifndef __FUNCSIG__
+#define __FUNCSIG__ __FUNCTION__
+#endif
 
 #if __CARLBEKS_MEMORY__ > 3
 #define allocatedFor(val, ...) allocatedFor$(val, L"\n    From " __FUNCSIG__ "\n    At   " __FILE__ ":" _STL_STRINGIZE(__LINE__) __VA_OPT__(,) __VA_ARGS__)
 #else
 #define allocatedFor(val, ...) allocatedFor$(val, L"" __VA_OPT__(,) __VA_ARGS__)
 #endif
-#if __CARLBEKS_MEMORY__ > 2
+#if __CARLBEKS_MEMORY__ > 1
 #define deallocating(val) deallocating$(val, L"\n    From " __FUNCSIG__ "\n    At   " __FILE__ ":" _STL_STRINGIZE(__LINE__))
 #else
 #define deallocating(val) deallocating$(val)

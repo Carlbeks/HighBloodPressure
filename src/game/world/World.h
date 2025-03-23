@@ -121,6 +121,7 @@ public:
 			block->onRemove();
 		}
 		gc.submit<World>(this);
+		Logger.debug(L"World::onRemove() called");
 	}
 };
 

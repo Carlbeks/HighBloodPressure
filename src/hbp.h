@@ -2,22 +2,12 @@
 
 #include "def.h"
 
-inline BOOL NewProcess(const String& cmdline) noexcept {
-	STARTUPINFOW si = {
-		sizeof(si), nullptr, nullptr, nullptr, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, nullptr, nullptr, nullptr, nullptr
-	};
-	PROCESS_INFORMATION pi{
-		nullptr, nullptr, 0, 0
-	};
-	return CreateProcessW(nullptr, const_cast<wchar*>(cmdline.c_str()), nullptr, nullptr, 0, 0, nullptr, nullptr, &si, &pi);
-}
-
 inline HRESULT RemoveDefaultCaption(const HWND hWnd, const MARGINS* p) noexcept { return DwmExtendFrameIntoClientArea(hWnd, p); }
 
 inline bool ShowConsoleIO() noexcept {
 	AllocConsole();
 	freopen("CONOUT$", "w", stdout);
-	freopen("CONOUT$", "r+", stdin);
+	freopen("CONIN$", "r+", stdin);
 	return true;
 }
 
